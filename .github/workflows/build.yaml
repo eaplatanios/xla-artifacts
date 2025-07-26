@@ -44,7 +44,7 @@ jobs:
             target: //xla/pjrt/c:pjrt_c_api_cpu_plugin
             artifact: libpjrt_c_api_cpu_plugin.dylib
           - platform: windows-amd64-cpu
-            runner: runs-on=${{ github.run_id }}/image=windows22-base-x64/family=m7i.8xlarge
+            runner: runs-on=${{ github.run_id }}/image=windows22-base-x64/family=m7i.8xlarge/disk=large
             config: "--config=win_clang"
             target: //xla/pjrt/c:pjrt_c_api_cpu_plugin
             artifact: pjrt_c_api_cpu_plugin.dll
@@ -163,7 +163,7 @@ jobs:
         uses: a7ul/tar-action@v1.2.0
         with:
           command: c
-          cwd: ./bazel-bin/xla/pjrt/c
+          cwd: ./xla/bazel-bin/xla/pjrt/c
           files: ${{ matrix.config.artifact }}
           outPath: pjrt-c-api-plugin-${{ matrix.config.platform }}.tar.gz
 
