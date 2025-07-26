@@ -1,0 +1,187 @@
+name: Build Artifacts
+
+on:
+  workflow_dispatch:
+    inputs:
+      xla_commit:
+        type: string
+        default: eda2aa3826c71df9c947e66eefdda2caa1fab71e
+        description: OpenXLA repository commit hash for which to compile binaries.
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build PJRT Plugin [${{ matrix.config.platform }}]
+    runs-on: ${{ matrix.config.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - platform: linux-amd64-cuda
+            runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64/image=ubuntu22-gpu-x64/disk=large/tag=ubuntu22-cuda-x64
+            config: "--config=cuda_nvcc"
+            target: //xla/pjrt/c:pjrt_c_api_gpu_plugin
+            artifact: libpjrt_cuda.so
+          - platform: linux-amd64-rocm
+            runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64/image=ubuntu22-gpu-x64/disk=large/tag=ubuntu22-rocm-x64
+            config: "--config=rocm_ci_hermetic"
+            target: //xla/pjrt/c:pjrt_c_api_gpu_plugin
+            artifact: libpjrt_rocm.so
+          - platform: linux-amd64-cpu
+            runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64
+            config: ""
+            target: //xla/pjrt/c:pjrt_c_api_cpu_plugin
+            artifact: libpjrt_cpu.so
+          - platform: darwin-arm64-cpu
+            runner: macos-15
+            config: "--config=release_macos_arm64 --macos_sdk_version=15.5 --xcode_version=16.4"
+            target: //xla/pjrt/c:pjrt_c_api_cpu_plugin
+            artifact: libpjrt_c_api_cpu_plugin.dylib
+          - platform: windows-amd64-cpu
+            runner: runs-on=${{ github.run_id }}/image=windows22-base-x64/family=m7i
+            config: "--config=win_clang"
+            target: //xla/pjrt/c:pjrt_c_api_cpu_plugin
+            artifact: pjrt_c_api_cpu_plugin.dll
+
+    steps:
+      - name: Install Bazel
+        uses: bazel-contrib/setup-bazel@0.15.0
+        with:
+          bazelisk-version: 1.26.0
+          bazelisk-cache: false
+          bazelrc: |
+            # Common Configuration
+            common --enable_platform_specific_config
+            common --color=yes
+            common --show_timestamps
+            common --verbose_failures
+
+            # Shared Build Configuration
+            build --spawn_strategy=local
+            build --repo_env=HERMETIC_PYTHON_VERSION=3.11
+            build --build_tag_filters -no_oss
+            build --test_tag_filters -no_oss
+            build --copt -Wno-sign-compare
+            build --copt -Wno-error=unused-command-line-argument
+            build --copt -Wno-gnu-offsetof-extensions
+
+            # Shared Linux Build Configuration
+            build:linux --incompatible_enable_cc_toolchain_resolution
+            build:linux --repo_env BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+
+            # CUDA Build Configuration
+            build:cuda --repo_env HERMETIC_CUDA_COMPUTE_CAPABILITIES="sm_50,sm_60,sm_70,sm_80,sm_90,sm_100,compute_120"
+            build:cuda --repo_env=HERMETIC_CUDA_VERSION="12.8.1"
+            build:cuda --repo_env=HERMETIC_CUDNN_VERSION="9.8.0"
+            build:cuda --repo_env=HERMETIC_NVSHMEM_VERSION="3.2.5"
+            build:cuda --@//xla/stream_executor/cuda:enable_libnvjitlink_support=True
+            build:cuda --@//xla/stream_executor/cuda:enable_libnvptxcompiler_support=True
+
+            # ROCm Build Configuration
+            build:rocm_ci_hermetic --repo_env ROCM_VERSION="6.4.1"
+            build:rocm_ci_hermetic --repo_env TF_ROCM_AMDGPU_TARGETS="gfx900,gfx906,gfx908,gfx90a,gfx940,gfx941,gfx942,gfx1030,gfx1100"
+            build:rocm_ci_hermetic --repo_env ROCM_PATH="/opt/rocm-6.4.1/"
+
+      - name: Install Chocolatey, Git, Visual Studio 2019 Build Tools, and LLVM 18
+        if: startsWith(matrix.config.platform, 'windows')
+        run: |
+          # Install Chocolatey
+          Set-ExecutionPolicy Bypass -Scope Process -Force
+          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+          iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+          # Install Git
+          choco install git.install -y
+          echo "C:\Program Files\Git\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+          # Install Visual Studio 2019 Build Tools
+          choco install visualstudio2019buildtools --package-parameters "--allWorkloads --includeRecommended --includeOptional --passive --locale en-US" -y
+          choco install visualstudio2019-workload-vctools -y
+          echo "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+          # Install LLVM 18
+          choco install llvm --version 18.1.8 -y
+          echo "C:\Program Files\LLVM\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        if: startsWith(matrix.config.platform, 'windows')
+        with:
+          python-version: "3.11.9"
+
+      - name: Install ROCm
+        if: endsWith(matrix.config.platform, 'rocm')
+        run: |
+          export DEBIAN_FRONTEND=noninteractive
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" -- 18
+          sudo apt update -y
+          sudo apt install llvm-18 lld-18 clang-18 libnuma-dev -y
+          wget https://repo.radeon.com/amdgpu-install/6.4.1/ubuntu/jammy/amdgpu-install_6.4.60401-1_all.deb
+          sudo apt install ./amdgpu-install_6.4.60401-1_all.deb -y
+          sudo amdgpu-install --usecase=hiplibsdk --no-dkms -y
+
+      - name: Check Out Repository
+        uses: actions/checkout@v4
+        with:
+          path: "xla-artifacts"
+
+      - name: Check Out OpenXLA
+        uses: actions/checkout@v4
+        with:
+          repository: openxla/xla
+          ref: ${{ inputs.xla_commit }}
+          path: xla
+
+      - name: Patch OpenXLA
+        shell: bash
+        working-directory: ./xla
+        run: |
+          echo ::notice::Applying patches to OpenXLA ${{ inputs.xla_commit }}
+          for patch in $(ls ../xla-artifacts/patches/*.patch | sort); do
+              echo "Applying patch $patch"
+              git apply "$patch"
+          done
+
+      - name: Build PJRT Plugin
+        run: bazel build ${{ matrix.config.config }} ${{ matrix.config.target }}
+        working-directory: ./xla
+
+      - name: Strip Symbols and Set RPath
+        if: startsWith(matrix.config.platform, 'darwin')
+        working-directory: ./xla
+        run: |
+          strip -x -o bazel-bin/xla/pjrt/c/${{ matrix.config.artifact }} bazel-bin/xla/pjrt/c/${{ matrix.config.artifact }}
+          install_name_tool -id '@rpath/${{ matrix.config.artifact }}' bazel-bin/xla/pjrt/c/${{ matrix.config.artifact }}
+
+      - name: Build Archive
+        uses: a7ul/tar-action@v1.2.0
+        with:
+          command: c
+          cwd: ./bazel-bin/xla/pjrt/c
+          files: ${{ matrix.config.artifact }}
+          outPath: pjrt-c-api-plugin-${{ matrix.config.platform }}.tar.gz
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pjrt-c-api-plugin-${{ matrix.config.platform }}.tar.gz
+          path: pjrt-c-api-plugin-${{ matrix.config.platform }}.tar.gz
+
+  release:
+    name: Release Artifacts
+    needs: ["build"]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+      - name: Release Artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          name: pjrt-plugins-xla-${{ inputs.xla_commit }}
+          files: "*.tar.gz/*.tar.gz"
