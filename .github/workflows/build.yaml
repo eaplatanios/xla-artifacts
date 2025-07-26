@@ -24,17 +24,17 @@ jobs:
       matrix:
         config:
           - platform: linux-amd64-cuda
-            runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64/image=ubuntu22-gpu-x64/disk=large/tag=ubuntu22-cuda-x64
+            runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64/image=ubuntu22-gpu-x64/disk=large/tag=ubuntu22-cuda-x64/spot=false
             config: "--config=cuda_nvcc"
             target: //xla/pjrt/c:pjrt_c_api_gpu_plugin
             artifact: libpjrt_c_api_gpu_plugin.so
           - platform: linux-amd64-rocm
-            runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64/image=ubuntu22-gpu-x64/disk=large/tag=ubuntu22-rocm-x64
+            runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64/image=ubuntu22-gpu-x64/disk=large/tag=ubuntu22-rocm-x64/spot=false
             config: "--config=rocm_ci_hermetic"
             target: //xla/pjrt/c:pjrt_c_api_gpu_plugin
             artifact: libpjrt_c_api_gpu_plugin.so
           - platform: linux-amd64-cpu
-            runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64
+            runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64/spot=false
             config: ""
             target: //xla/pjrt/c:pjrt_c_api_cpu_plugin
             artifact: libpjrt_c_api_cpu_plugin.so
@@ -44,7 +44,7 @@ jobs:
             target: //xla/pjrt/c:pjrt_c_api_cpu_plugin
             artifact: libpjrt_c_api_cpu_plugin.dylib
           - platform: windows-amd64-cpu
-            runner: runs-on=${{ github.run_id }}/image=windows22-base-x64/family=m7i.8xlarge/disk=large
+            runner: runs-on=${{ github.run_id }}/image=windows22-base-x64/family=m7i.8xlarge/disk=large/spot=false
             config: "--config=win_clang"
             target: //xla/pjrt/c:pjrt_c_api_cpu_plugin
             artifact: pjrt_c_api_cpu_plugin.dll
