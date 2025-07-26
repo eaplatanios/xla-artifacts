@@ -50,49 +50,6 @@ jobs:
             artifact: pjrt_c_api_cpu_plugin.dll
 
     steps:
-      - name: Install Bazel
-        uses: bazel-contrib/setup-bazel@0.15.0
-        with:
-          bazelisk-version: 1.26.0
-          bazelisk-cache: false
-          bazelrc: |
-            # Common Configuration
-            common --enable_platform_specific_config
-            common --color=yes
-            common --show_timestamps
-            common --verbose_failures
-
-            # Shared Build Configuration
-            build --spawn_strategy=local
-            build --repo_env=HERMETIC_PYTHON_VERSION=3.11
-            build --build_tag_filters -no_oss
-            build --test_tag_filters -no_oss
-            build --copt -Wno-sign-compare
-            build --copt -Wno-error=unused-command-line-argument
-            build --copt -Wno-gnu-offsetof-extensions
-
-            # Shared Linux Build Configuration
-            build:linux --incompatible_enable_cc_toolchain_resolution
-            build:linux --repo_env BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
-
-            # Windows Build Configuration
-            build:win_clang --action_env CLANG_COMPILER_PATH=C:\\Program\ Files\\LLVM\\bin\\clang.exe
-            build:win_clang --repo_env CC=C:\\Program\ Files\\LLVM\\bin\\clang.exe
-            build:win_clang --repo_env BAZEL_COMPILER=C:\\Program\ Files\\LLVM\\bin\\clang.exe
-
-            # CUDA Build Configuration
-            build:cuda --repo_env HERMETIC_CUDA_COMPUTE_CAPABILITIES="sm_50,sm_60,sm_70,sm_80,sm_90,sm_100,compute_120"
-            build:cuda --repo_env=HERMETIC_CUDA_VERSION="12.8.1"
-            build:cuda --repo_env=HERMETIC_CUDNN_VERSION="9.8.0"
-            build:cuda --repo_env=HERMETIC_NVSHMEM_VERSION="3.2.5"
-            build:cuda --@//xla/stream_executor/cuda:enable_libnvjitlink_support=True
-            build:cuda --@//xla/stream_executor/cuda:enable_libnvptxcompiler_support=True
-
-            # ROCm Build Configuration
-            build:rocm_ci_hermetic --repo_env ROCM_VERSION="6.4.1"
-            build:rocm_ci_hermetic --repo_env TF_ROCM_AMDGPU_TARGETS="gfx900,gfx906,gfx908,gfx90a,gfx940,gfx941,gfx942,gfx1030,gfx1100"
-            build:rocm_ci_hermetic --repo_env ROCM_PATH="/opt/rocm-6.4.1/"
-
       - name: Install Chocolatey, Git, Visual Studio 2019 Build Tools, and LLVM 18
         if: startsWith(matrix.config.platform, 'windows')
         run: |
@@ -130,6 +87,50 @@ jobs:
           wget https://repo.radeon.com/amdgpu-install/6.4.1/ubuntu/jammy/amdgpu-install_6.4.60401-1_all.deb
           sudo apt install ./amdgpu-install_6.4.60401-1_all.deb -y
           sudo amdgpu-install --usecase=hiplibsdk --no-dkms -y
+
+      - name: Install Bazel
+        uses: bazel-contrib/setup-bazel@0.15.0
+        with:
+          bazelisk-version: 1.26.0
+          bazelisk-cache: false
+          bazelrc: |
+            # Common Configuration
+            common --enable_platform_specific_config
+            common --color=yes
+            common --show_timestamps
+            common --verbose_failures
+
+            # Shared Build Configuration
+            build --spawn_strategy=local
+            build --repo_env=HERMETIC_PYTHON_VERSION=3.11
+            build --build_tag_filters -no_oss
+            build --test_tag_filters -no_oss
+            build --copt -Wno-sign-compare
+            build --copt -Wno-error=unused-command-line-argument
+            build --copt -Wno-gnu-offsetof-extensions
+
+            # Shared Linux Build Configuration
+            build:linux --incompatible_enable_cc_toolchain_resolution
+            build:linux --repo_env BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+
+            # Windows Build Configuration
+            build:win_clang --action_env CLANG_COMPILER_PATH=C:\\Program\ Files\\LLVM\\bin\\clang.exe
+            build:win_clang --repo_env CC=C:\\Program\ Files\\LLVM\\bin\\clang.exe
+            build:win_clang --repo_env BAZEL_COMPILER=C:\\Program\ Files\\LLVM\\bin\\clang.exe
+            build:win_clang --repo_env BAZEL_VC=C:\\Program\ Files\ (x86)\\Microsoft\ Visual\ Studio\\2019\\BuildTools\\VC
+
+            # CUDA Build Configuration
+            build:cuda --repo_env HERMETIC_CUDA_COMPUTE_CAPABILITIES="sm_50,sm_60,sm_70,sm_80,sm_90,sm_100,compute_120"
+            build:cuda --repo_env=HERMETIC_CUDA_VERSION="12.8.1"
+            build:cuda --repo_env=HERMETIC_CUDNN_VERSION="9.8.0"
+            build:cuda --repo_env=HERMETIC_NVSHMEM_VERSION="3.2.5"
+            build:cuda --@//xla/stream_executor/cuda:enable_libnvjitlink_support=True
+            build:cuda --@//xla/stream_executor/cuda:enable_libnvptxcompiler_support=True
+
+            # ROCm Build Configuration
+            build:rocm_ci_hermetic --repo_env ROCM_VERSION="6.4.1"
+            build:rocm_ci_hermetic --repo_env TF_ROCM_AMDGPU_TARGETS="gfx900,gfx906,gfx908,gfx90a,gfx940,gfx941,gfx942,gfx1030,gfx1100"
+            build:rocm_ci_hermetic --repo_env ROCM_PATH="/opt/rocm-6.4.1/"
 
       - name: Check Out Repository
         uses: actions/checkout@v4
