@@ -114,6 +114,7 @@ jobs:
             build:linux --repo_env BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
 
             # Windows Build Configuration
+            build:win_clang --local_ram_resources 128000
             build:win_clang --action_env CLANG_COMPILER_PATH=C:\\Program\ Files\\LLVM\\bin\\clang.exe
             build:win_clang --repo_env CC=C:\\Program\ Files\\LLVM\\bin\\clang.exe
             build:win_clang --repo_env BAZEL_COMPILER=C:\\Program\ Files\\LLVM\\bin\\clang.exe
