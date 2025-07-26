@@ -23,26 +23,26 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          # - platform: linux-amd64-cuda
-          #   runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64/image=ubuntu22-gpu-x64/disk=large/tag=ubuntu22-cuda-x64
-          #   config: "--config=cuda_nvcc"
-          #   target: //xla/pjrt/c:pjrt_c_api_gpu_plugin
-          #   artifact: libpjrt_c_api_gpu_plugin.so
-          # - platform: linux-amd64-rocm
-          #   runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64/image=ubuntu22-gpu-x64/disk=large/tag=ubuntu22-rocm-x64
-          #   config: "--config=rocm_ci_hermetic"
-          #   target: //xla/pjrt/c:pjrt_c_api_gpu_plugin
-          #   artifact: libpjrt_c_api_gpu_plugin.so
-          # - platform: linux-amd64-cpu
-          #   runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64
-          #   config: ""
-          #   target: //xla/pjrt/c:pjrt_c_api_cpu_plugin
-          #   artifact: libpjrt_c_api_cpu_plugin.so
-          # - platform: darwin-arm64-cpu
-          #   runner: macos-15
-          #   config: "--config=release_macos_arm64 --macos_sdk_version=15.5 --xcode_version=16.4"
-          #   target: //xla/pjrt/c:pjrt_c_api_cpu_plugin
-          #   artifact: libpjrt_c_api_cpu_plugin.dylib
+          - platform: linux-amd64-cuda
+            runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64/image=ubuntu22-gpu-x64/disk=large/tag=ubuntu22-cuda-x64
+            config: "--config=cuda_nvcc"
+            target: //xla/pjrt/c:pjrt_c_api_gpu_plugin
+            artifact: libpjrt_c_api_gpu_plugin.so
+          - platform: linux-amd64-rocm
+            runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64/image=ubuntu22-gpu-x64/disk=large/tag=ubuntu22-rocm-x64
+            config: "--config=rocm_ci_hermetic"
+            target: //xla/pjrt/c:pjrt_c_api_gpu_plugin
+            artifact: libpjrt_c_api_gpu_plugin.so
+          - platform: linux-amd64-cpu
+            runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64
+            config: ""
+            target: //xla/pjrt/c:pjrt_c_api_cpu_plugin
+            artifact: libpjrt_c_api_cpu_plugin.so
+          - platform: darwin-arm64-cpu
+            runner: macos-15
+            config: "--config=release_macos_arm64 --macos_sdk_version=15.5 --xcode_version=16.4"
+            target: //xla/pjrt/c:pjrt_c_api_cpu_plugin
+            artifact: libpjrt_c_api_cpu_plugin.dylib
           - platform: windows-amd64-cpu
             runner: runs-on=${{ github.run_id }}/image=windows22-base-x64/family=m7i.8xlarge/disk=large
             config: "--config=win_clang"
@@ -190,5 +190,5 @@ jobs:
       - name: Release Artifacts
         uses: softprops/action-gh-release@v2
         with:
-          name: pjrt-plugins-xla-${{ inputs.xla_commit }}
+          tag_name: xla-${{ inputs.xla_commit }}
           files: "*.tar.gz/*.tar.gz"
