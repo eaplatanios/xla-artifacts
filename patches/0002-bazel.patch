@@ -74,7 +74,17 @@
  # Config-specific options should come above this line.
 --- a/xla/pjrt/c/BUILD
 +++ b/xla/pjrt/c/BUILD
-@@ -359,7 +359,7 @@ cc_library(
+@@ -10,8 +10,8 @@ load(
+ load("//xla/tests:build_defs.bzl", "xla_test")
+ load(
+     "//xla/tsl:tsl.bzl",
++    "clean_dep",
+     "if_google",
+-    "if_macos",
+     "internal_visibility",
+ )
+ load("//xla/tsl/platform:rules_cc.bzl", "cc_library")
+@@ -361,22 +361,24 @@ cc_library(
  
  # PJRT CPU plugin.
  xla_cc_binary(
@@ -83,7 +93,28 @@
      additional_linker_inputs = [
          ":pjrt_c_api_cpu_version_script.lds",
      ],
-@@ -453,7 +453,7 @@ cc_library(
+-    linkopts = if_macos(
+-        [
++    linkopts = select({
++        clean_dep("//xla/tsl:macos"): [
+             "-Wl,-exported_symbol,_GetPjrtApi",
+             "-Wl,-install_name,@rpath/pjrt_c_api_cpu_plugin.dylib",
+             "-Wl,-undefined,error",
+         ],
+-        [
++        clean_dep("//xla/tsl:windows"): [],
++        "//conditions:default": [
+             "-Wl,--version-script,$(location :pjrt_c_api_cpu_version_script.lds)",
+             "-Wl,--no-undefined",
+         ],
+-    ),
++    }),
+     linkshared = True,
++    win_def_file = ":pjrt_c_api.def",
+     tags = [
+         "noasan",
+         "nomsan",
+@@ -455,7 +457,7 @@ cc_library(
  
  # PJRT GPU plugin. Can be configured to be built for CUDA or ROCM.
  xla_cc_binary(
@@ -92,3 +123,11 @@
      additional_linker_inputs = [
          ":pjrt_c_api_gpu_version_script.lds",
      ],
+@@ -464,6 +466,7 @@ xla_cc_binary(
+         "-Wl,--no-undefined",
+     ],
+     linkshared = True,
++    win_def_file = ":pjrt_c_api.def",
+     tags = [
+         "no_mac",  # No GPU on mac.
+         "noasan",

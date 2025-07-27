@@ -5,7 +5,7 @@ on:
     inputs:
       xla_commit:
         type: string
-        default: eda2aa3826c71df9c947e66eefdda2caa1fab71e
+        default: a645838b7979b6c81ec991cab05b8b183523e13b
         description: OpenXLA repository commit hash for which to compile binaries.
 
 concurrency:
@@ -159,12 +159,12 @@ jobs:
         run: bazel build ${{ matrix.config.config }} ${{ matrix.config.target }}
         working-directory: ./xla
 
-      - name: Strip Symbols and Set RPath
-        if: startsWith(matrix.config.platform, 'darwin')
-        working-directory: ./xla
-        run: |
-          strip -x -o bazel-bin/xla/pjrt/c/${{ matrix.config.artifact }} bazel-bin/xla/pjrt/c/${{ matrix.config.artifact }}
-          install_name_tool -id '@rpath/${{ matrix.config.artifact }}' bazel-bin/xla/pjrt/c/${{ matrix.config.artifact }}
+      # - name: Strip Symbols and Set RPath
+      #   if: startsWith(matrix.config.platform, 'darwin')
+      #   working-directory: ./xla
+      #   run: |
+      #     strip -x -o bazel-bin/xla/pjrt/c/${{ matrix.config.artifact }} bazel-bin/xla/pjrt/c/${{ matrix.config.artifact }}
+      #     install_name_tool -id '@rpath/${{ matrix.config.artifact }}' bazel-bin/xla/pjrt/c/${{ matrix.config.artifact }}
 
       - name: Build Archive
         uses: a7ul/tar-action@v1.2.0
