@@ -150,6 +150,7 @@ jobs:
         working-directory: ./xla
         run: |
           echo ::notice::Applying patches to OpenXLA ${{ inputs.xla_commit }}
+          echo -e "EXPORTS\n    GetPjrtApi\n" >> xla/pjrt/c/pjrt_c_api.def
           for patch in $(ls ../xla-artifacts/patches/*.patch | sort); do
               echo "Applying patch $patch"
               git apply "$patch"
