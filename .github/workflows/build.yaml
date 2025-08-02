@@ -110,6 +110,7 @@ jobs:
           echo "Extracted XLA Commit ID: $XLA_COMMIT_ID"
           echo "xla_commit_id=$XLA_COMMIT_ID" >> "$GITHUB_OUTPUT"
       - name: Build Library
+        if: ${{ matrix.config.device != 'rocm' }}
         working-directory: ./xla-artifacts
         id: build_library
         shell: bash
@@ -119,8 +120,18 @@ jobs:
           bazel build ${{ matrix.config.config }} //:rift-pjrt-sys-archive //:rift-pjrt-sys-static-archive
           cp bazel-bin/rift-pjrt-sys-archive.tar.gz $OUTPUT
           cp bazel-bin/rift-pjrt-sys-static-archive.tar.gz $OUTPUT_STATIC
-          echo "library=$OUTPUT\n" >> $GITHUB_OUTPUT
-          echo "static_library=$OUTPUT_STATIC\n" >> $GITHUB_OUTPUT
+          echo "library=$OUTPUT" >> $GITHUB_OUTPUT
+          echo "static_library=$OUTPUT_STATIC" >> $GITHUB_OUTPUT
+      - name: Build Library
+        if: ${{ matrix.config.device == 'rocm' }}
+        working-directory: ./xla-artifacts
+        id: build_library
+        shell: bash
+        run: |
+          OUTPUT=${{ matrix.config.output }}
+          bazel build ${{ matrix.config.config }} //:rift-pjrt-sys-archive
+          cp bazel-bin/rift-pjrt-sys-archive.tar.gz $OUTPUT
+          echo "library=$OUTPUT" >> $GITHUB_OUTPUT
       - name: Upload '${{ steps.build_library.outputs.library }}'
         uses: actions/upload-artifact@v4
         with:
