@@ -204,7 +204,7 @@ filegroup(
         "@llvm-project//mlir:VectorOpsTdFiles",
         "@llvm-project//mlir:VectorTransformOpsTdFiles",
         "@llvm-project//mlir:XeVMTdFiles",
-        # "@shardy//shardy/dialect/sdy:sdy_td_files",
+        "@shardy//shardy/dialect/sdy/ir:sdy_td_files",
         "@stablehlo//:chlo_ops_td_files",
         "@stablehlo//:stablehlo_ops_td_files",
         "@stablehlo//:vhlo_ops_td_files",
