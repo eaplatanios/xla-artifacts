@@ -103,6 +103,7 @@ build:cuda --crosstool_top=@local_config_cuda//crosstool:toolchain
 
 # ROCm Configuration
 build:rocm --noincompatible_enable_cc_toolchain_resolution
+build:rocm --repo_env BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=0
 build:rocm --@rules_ml_toolchain//common:enable_hermetic_cc=False
 build:rocm --repo_env USE_HERMETIC_CC_TOOLCHAIN=0
 build:rocm --repo_env="OS=ubuntu_22.04"
