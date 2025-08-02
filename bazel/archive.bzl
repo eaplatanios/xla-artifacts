@@ -167,7 +167,7 @@ def _build_archive_impl(ctx):
         ))
 
     ctx.actions.run_shell(
-        inputs = [header[0] for header in headers] + libraries,
+        inputs = [proto[0] for proto in protos] + [header[0] for header in headers] + libraries,
         outputs = [output],
         command = """
             set -e
