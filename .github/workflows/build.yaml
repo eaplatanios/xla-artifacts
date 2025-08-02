@@ -161,7 +161,7 @@ jobs:
       - name: Extract XLA Commit ID
         id: extract_xla_commit_id
         run: |
-          XLA_COMMIT_ID=$(grep -oP 'XLA_COMMIT = "\K[a-f0-9]{40}"' WORKSPACE)
+          XLA_COMMIT_ID=$(grep 'XLA_COMMIT = "' WORKSPACE | sed 's/.*XLA_COMMIT = "\([^"]*\)".*/\1/')
           echo "Extracted XLA Commit ID: $XLA_COMMIT_ID"
           echo "xla_commit_id=$XLA_COMMIT_ID" >> "$GITHUB_OUTPUT"
       - name: Build ${{ matrix.config.output }}
