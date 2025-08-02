@@ -1,6 +1,7 @@
 STRIP_PREFIXES = [
     "external/llvm-project/mlir/include/",
     "external/shardy/",
+    "external/stablehlo/",
     "external/xla/",
 ]
 
@@ -71,6 +72,7 @@ def _build_archive_impl(ctx):
     output = ctx.actions.declare_file(ctx.label.name + ".tar.gz")
 
     protos = []
+    td_files = []
     headers = []
     libraries = []
 
@@ -97,6 +99,14 @@ def _build_archive_impl(ctx):
             if path in HEADERS:
                 headers.append((header, path))
 
+    if DefaultInfo in ctx.attr.rift_pjrt_sys_td_files:
+        for output_file in ctx.attr.rift_pjrt_sys_td_files[DefaultInfo].files.to_list():
+            path = output_file.path
+            for prefix in STRIP_PREFIXES:
+                if path.startswith(prefix):
+                    path = path[len(prefix):]
+            td_files.append((output_file, path))
+
     # Collect output files from DefaultInfo.
     if DefaultInfo in ctx.attr.rift_pjrt_sys_library:
         for output_file in ctx.attr.rift_pjrt_sys_library[DefaultInfo].files.to_list():
@@ -118,6 +128,18 @@ def _build_archive_impl(ctx):
             chmod 644 "$archive_dir/protos/{path}"
         """.format(
             proto = proto.path,
+            path = path,
+        ))
+    for td_file, path in td_files:
+        copy_commands.append("""
+            target_dir="$archive_dir/td/$(dirname "{path}")"
+            mkdir -p "$target_dir"
+            chmod 755 "$target_dir"
+
+            cp "{td_file}" "$archive_dir/td/{path}"
+            chmod 644 "$archive_dir/td/{path}"
+        """.format(
+            td_file = td_file.path,
             path = path,
         ))
     for header, path in headers:
@@ -167,7 +189,7 @@ def _build_archive_impl(ctx):
         ))
 
     ctx.actions.run_shell(
-        inputs = [proto[0] for proto in protos] + [header[0] for header in headers] + libraries,
+        inputs = [proto[0] for proto in protos] + [td_file[0] for td_file in td_files] + [header[0] for header in headers] + libraries,
         outputs = [output],
         command = """
             set -e
@@ -195,6 +217,7 @@ build_archive = rule(
     implementation = _build_archive_impl,
     attrs = {
         "rift_pjrt_sys_protos": attr.label(providers = [ProtoInfo]),
+        "rift_pjrt_sys_td_files": attr.label(providers = [DefaultInfo]),
         "rift_pjrt_sys_headers": attr.label(providers = [CcInfo]),
         "rift_pjrt_sys_library": attr.label(providers = [DefaultInfo]),
         "rift_pjrt_sys_windows_interface_library": attr.label(providers = [DefaultInfo]),
