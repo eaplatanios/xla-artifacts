@@ -1,0 +1,73 @@
+--- a/third_party/gpus/cuda/hermetic/BUILD.tpl
++++ b/third_party/gpus/cuda/hermetic/BUILD.tpl
+@@ -307,6 +307,7 @@ cc_library(
+     # This is not yet fully supported, but we need the rule
+     # to make bazel query happy.
+     name = "nvptxcompiler",
++    actual = "@cuda_nvcc//:libnvptxcompiler",
+ )
+ 
+ alias(
+ 
+--- a/workspace0.bzl
++++ b/workspace0.bzl
+@@ -143,6 +143,8 @@ def workspace():
+         urls = [
+             "https://github.com/google-ml-infra/rules_ml_toolchain/archive/69a7b71c9424ddbcc27cb7814ecfd482510b1947.tar.gz",
+         ],
++        patches = ["//:rules_ml_toolchain.patch"],
++        patch_args = ["-p1", "--ignore-whitespace"],
+     )
+ 
+     # If a target is bound twice, the later one wins, so we have to do tf bindings
+ 
+--- a/xla/stream_executor/cuda/BUILD
++++ b/xla/stream_executor/cuda/BUILD
+@@ -124,7 +124,12 @@ cc_library(
+             "@tsl//tsl/platform:errors",
+             "@tsl//tsl/platform:status",
+             "@tsl//tsl/platform:statusor",
+-        ] + tf_additional_cuda_platform_deps(),
++        ] + tf_additional_cuda_platform_deps() + select({
++            ":libnvptxcompiler_support_enabled": [
++                "@local_config_cuda//cuda:nvptxcompiler",
++            ],
++            "//conditions:default": [],
++        }),
+     alwayslink = True,  # Registers itself with the PlatformManager.
+ )
+ 
+--- /dev/null
++++ b/rules_ml_toolchain.patch
+@@ -0,0 +1,31 @@
++--- a/third_party/gpus/cuda/hermetic/BUILD.tpl
+++++ b/third_party/gpus/cuda/hermetic/BUILD.tpl
++@@ -303,10 +303,9 @@ selects.config_setting_group(
++     ],
++ )
++ 
++-cc_library(
++-    # This is not yet fully supported, but we need the rule
++-    # to make bazel query happy.
+++alias(
++     name = "nvptxcompiler",
+++    actual = "@cuda_nvcc//:nvptxcompiler",
++ )
++ 
++ alias(
++--- a/third_party/gpus/cuda/hermetic/cuda_nvcc.BUILD.tpl
+++++ b/third_party/gpus/cuda/hermetic/cuda_nvcc.BUILD.tpl
++@@ -66,6 +66,13 @@ filegroup(
++     visibility = ["//visibility:public"],
++ )
++ 
+++cc_import(
+++   name = "nvptxcompiler",
+++    hdrs = ["include/nvPTXCompiler.h"],
+++    static_library = "lib/libnvptxcompiler_static.a",
+++    visibility = ["@local_config_cuda//cuda:__pkg__"],
+++)
+++
++ filegroup(
++     name = "link_stub",
++     srcs = [
