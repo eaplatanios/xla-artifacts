@@ -121,16 +121,16 @@ jobs:
           cp bazel-bin/rift-pjrt-sys-static-archive.tar.gz $OUTPUT_STATIC
           echo "library=$OUTPUT\n" >> $GITHUB_OUTPUT
           echo "static_library=$OUTPUT_STATIC\n" >> $GITHUB_OUTPUT
-      - name: Upload '${{ steps.build_library.library }}'
+      - name: Upload '${{ steps.build_library.outputs.library }}'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.build_library.library }}
-          path: xla-artifacts/${{ steps.build_library.library }}
-      - name: Upload '${{ steps.build_library.static_library }}'
+          name: ${{ steps.build_library.outputs.library }}
+          path: xla-artifacts/${{ steps.build_library.outputs.library }}
+      - name: Upload '${{ steps.build_library.outputs.static_library }}'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.build_library.static_library }}
-          path: xla-artifacts/${{ steps.build_library.static_library }}
+          name: ${{ steps.build_library.outputs.static_library }}
+          path: xla-artifacts/${{ steps.build_library.outputs.static_library }}
 
   release:
     name: Release Artifacts
