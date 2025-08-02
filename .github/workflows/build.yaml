@@ -114,8 +114,8 @@ jobs:
         id: build_library
         shell: bash
         run: |
-          OUTPUT="${{ matrix.config.output }}"
-          OUTPUT_STATIC="${{ matrix.config.output }}/-sys/-sys-static
+          OUTPUT=${{ matrix.config.output }}
+          OUTPUT_STATIC=${{ matrix.config.output }}/-sys/-sys-static
           bazel build ${{ matrix.config.config }} //:rift-pjrt-sys-archive //:rift-pjrt-sys-static-archive
           cp bazel-bin/rift-pjrt-sys-archive.tar.gz $OUTPUT
           cp bazel-bin/rift-pjrt-sys-static-archive.tar.gz $OUTPUT_STATIC
