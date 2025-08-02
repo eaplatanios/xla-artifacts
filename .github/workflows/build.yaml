@@ -110,7 +110,6 @@ jobs:
           echo "Extracted XLA Commit ID: $XLA_COMMIT_ID"
           echo "xla_commit_id=$XLA_COMMIT_ID" >> "$GITHUB_OUTPUT"
       - name: Build Library
-        if: ${{ matrix.config.device != 'rocm' }}
         working-directory: ./xla-artifacts
         id: build_library
         shell: bash
@@ -131,6 +130,7 @@ jobs:
           name: ${{ steps.build_library.outputs.library }}
           path: xla-artifacts/${{ steps.build_library.outputs.library }}
       - name: Upload '${{ steps.build_library.outputs.static_library }}'
+        if: ${{ matrix.config.device != 'rocm' }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.build_library.outputs.static_library }}
