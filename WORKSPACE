@@ -76,6 +76,17 @@ load("@xla//:workspace0.bzl", "xla_workspace0")
 
 xla_workspace0()
 
+http_archive(
+    name = "rules_ml_toolchain",
+    sha256 = "d486aadba1b4415da16d744e4511c7a35d4d1604c61ed562d37519d5ed072a86",
+    strip_prefix = "rules_ml_toolchain-69a7b71c9424ddbcc27cb7814ecfd482510b1947",
+    urls = [
+        "https://github.com/google-ml-infra/rules_ml_toolchain/archive/69a7b71c9424ddbcc27cb7814ecfd482510b1947.tar.gz",
+    ],
+    patches = ["//patches:rules_ml_toolchain.patch"],
+    patch_args = ["-p1", "--ignore-whitespace"],
+)
+
 load(
     "@rules_ml_toolchain//cc/deps:cc_toolchain_deps.bzl",
     "cc_toolchain_deps",
