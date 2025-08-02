@@ -64,7 +64,7 @@ jobs:
         id: extract_xla_commit_id
         shell: bash
         run: |
-          XLA_COMMIT_ID=$(grep 'XLA_COMMIT = "' WORKSPACE | sed 's/.*XLA_COMMIT = "\([^"]*\)".*/\1/')
+          XLA_COMMIT_ID=$(grep 'XLA_COMMIT = "' xla-artifacts/WORKSPACE | sed 's/.*XLA_COMMIT = "\([^"]*\)".*/\1/')
           echo "Extracted XLA Commit ID: $XLA_COMMIT_ID"
           echo "xla_commit_id=$XLA_COMMIT_ID" >> "$GITHUB_OUTPUT"
       - name: Install Chocolatey, Git, Visual Studio 2019 Build Tools, and LLVM 18
