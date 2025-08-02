@@ -111,20 +111,26 @@ jobs:
           echo "xla_commit_id=$XLA_COMMIT_ID" >> "$GITHUB_OUTPUT"
       - name: Build Library
         working-directory: ./xla-artifacts
+        id: build_library
+        shell: bash
         run: |
+          OUTPUT="${{ matrix.config.output }}"
+          OUTPUT_STATIC="${{ matrix.config.output }}/-sys/-sys-static
           bazel build ${{ matrix.config.config }} //:rift-pjrt-sys-archive //:rift-pjrt-sys-static-archive
-          cp bazel-bin/rift-pjrt-sys-archive.tar.gz ${{ matrix.config.output }}
-          cp bazel-bin/rift-pjrt-sys-static-archive.tar.gz ${{ replace(matrix.config.output, '-sys', '-sys-static', 1) }}
-      - name: Upload '${{ matrix.config.output }}'
+          cp bazel-bin/rift-pjrt-sys-archive.tar.gz $OUTPUT
+          cp bazel-bin/rift-pjrt-sys-static-archive.tar.gz $OUTPUT_STATIC
+          echo "library=$OUTPUT\n" >> $GITHUB_OUTPUT
+          echo "static_library=$OUTPUT_STATIC\n" >> $GITHUB_OUTPUT
+      - name: Upload '${{ build_library.library }}'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.config.output }}
-          path: xla-artifacts/${{ matrix.config.output }}
-      - name: Upload '${{ replace(matrix.config.output, '-sys', '-sys-static', 1) }}'
+          name: ${{ build_library.library }}
+          path: xla-artifacts/${{ build_library.library }}
+      - name: Upload '${{ build_library.static_library }}'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ replace(matrix.config.output, '-sys', '-sys-static', 1) }}
-          path: xla-artifacts/${{ replace(matrix.config.output, '-sys', '-sys-static', 1) }}
+          name: ${{ build_library.static_library }}
+          path: xla-artifacts/${{ build_library.static_library }}
 
   release:
     name: Release Artifacts
