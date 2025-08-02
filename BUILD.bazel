@@ -1,0 +1,145 @@
+load("//bazel:archive.bzl", "build_archive")
+
+load("@buildifier_prebuilt//:rules.bzl", "buildifier")
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@xla//xla/tsl:tsl.bzl", "tsl_copts")
+
+# ----------------------------------------------------
+# Bazel
+# ----------------------------------------------------
+
+buildifier(
+    name = "bzl-format-check",
+    exclude_patterns = [
+        "**/src/**",
+        "**/bazel-*/**",
+    ],
+    lint_mode = "warn",
+    mode = "diff",
+)
+
+buildifier(
+    name = "bzl-format-fix",
+    exclude_patterns = [
+        "**/src/**",
+        "**/bazel-*/**",
+    ],
+    lint_mode = "fix",
+    mode = "fix",
+)
+
+platform(
+    name = "x64_windows-clang-cl",
+    constraint_values = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:windows",
+        "@bazel_tools//tools/cpp:clang-cl",
+    ],
+)
+
+# ----------------------------------------------------
+# XLA
+# ----------------------------------------------------
+
+XLA_DEPENDENCIES = [
+    # "@jax//jaxlib/mosaic/gpu:mlir_capi",
+    "@llvm-project//llvm:Support",
+    "@llvm-project//mlir:CAPIArith",
+    "@llvm-project//mlir:CAPICF",
+    "@llvm-project//mlir:CAPIGPU",
+    "@llvm-project//mlir:CAPIIR",
+    "@llvm-project//mlir:CAPILLVM",
+    "@llvm-project//mlir:CAPIMath",
+    "@llvm-project//mlir:CAPIMemRef",
+    "@llvm-project//mlir:CAPINVGPU",
+    "@llvm-project//mlir:CAPINVVM",
+    "@llvm-project//mlir:CAPISCF",
+    "@llvm-project//mlir:CAPITransforms",
+    "@llvm-project//mlir:CAPIVector",
+    "@llvm-project//mlir:FuncDialect",
+    "@llvm-project//mlir:IR",
+    "@llvm-project//mlir:Support",
+    "@shardy//shardy/integrations/c:sdy_capi",
+    "@stablehlo//:chlo_capi",
+    "@stablehlo//:stablehlo_capi",
+    "@stablehlo//:vhlo_capi",
+    "@xla//xla/mlir_hlo:CAPI",
+    "@xla//xla/service/spmd/shardy/integrations/c:xla_sdy_capi",
+]
+
+RIFT_PJRT_SYS_DEPENDENCIES = XLA_DEPENDENCIES + select({
+    "@local_config_cuda//:is_cuda_enabled": [
+        "@xla//xla/pjrt/c:pjrt_c_api_gpu",
+        "@xla//xla/service:gpu_plugin",
+        "@xla//xla/stream_executor:cuda_platform",
+    ],
+    "@local_config_rocm//rocm:using_hipcc": [
+        "@xla//xla/pjrt/c:pjrt_c_api_gpu",
+        "@xla//xla/service:gpu_plugin",
+        "@xla//xla/stream_executor:rocm_platform",
+    ],
+    "//conditions:default": [
+        "@xla//xla/pjrt/c:pjrt_c_api_cpu",
+    ],
+})
+
+cc_static_library(
+    name = "rift-pjrt-sys-static",
+    deps = RIFT_PJRT_SYS_DEPENDENCIES,
+)
+
+cc_binary(
+    name = "rift-pjrt-sys",
+    additional_linker_inputs = [
+        ":rift_pjrt_sys_exported_symbols.txt",
+        ":rift_pjrt_sys_version_script.lds",
+    ],
+    copts = tsl_copts(),
+    linkopts = select({
+        "@xla//xla/tsl:macos": [
+            # We set the `install_name`, such that the library is looked up in the `RPATH`
+            # at runtime. Otherwise, the `install_name` would be an arbitrary path within
+            # the Bazel workspace.
+            "-Wl,-install_name,@rpath/librift-pjrt-sys.dylib",
+
+            # We set `RPATH` to the same directory as `librift-pjrt-sys.dylib`, so that loading PJRT
+            # plugins from within the same directory works out of the box.
+            "-Wl,-rpath,@loader_path/",
+
+            # We export the symbols specified in `rift_pjrt_sys_exported_symbols.txt`.
+            "-Wl,-exported_symbols_list,$(location :rift_pjrt_sys_exported_symbols.txt)",
+            "-Wl,-undefined,error",
+        ],
+        "@xla//xla/tsl:windows": [
+            "/FORCE:MULTIPLE",
+        ],
+        "//conditions:default": [
+            "-Wl,-soname,librift-pjrt-sys.so",
+            "-Wl,-rpath='$$ORIGIN'",
+            "-Wl,--version-script,$(location :rift_pjrt_sys_version_script.lds)",
+            "-Wl,--no-undefined",
+        ],
+    }),
+    linkshared = True,
+    win_def_file = ":rift_pjrt_sys.def",
+    deps = RIFT_PJRT_SYS_DEPENDENCIES,
+)
+
+filegroup(
+    name = "rift-pjrt-sys-windows-interface-library",
+    srcs = [":rift-pjrt-sys"],
+    output_group = "interface_library",
+)
+
+build_archive(
+    name = "rift-pjrt-sys-static-archive",
+    rift_pjrt_sys_headers = ":rift-pjrt-sys",
+    rift_pjrt_sys_library = ":rift-pjrt-sys-static",
+)
+
+build_archive(
+    name = "rift-pjrt-sys-archive",
+    rift_pjrt_sys_headers = ":rift-pjrt-sys",
+    rift_pjrt_sys_library = ":rift-pjrt-sys",
+    rift_pjrt_sys_windows_interface_library = ":rift-pjrt-sys-windows-interface-library",
+)
