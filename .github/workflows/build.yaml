@@ -112,11 +112,9 @@ jobs:
       - name: Build Library
         working-directory: ./xla-artifacts
         run: |
-          OUTPUT="${{ matrix.config.output }}"
-          OUTPUT_STATIC="${{ matrix.config.output.replace('-sys', '-sys-static', 1) }}"
           bazel build ${{ matrix.config.config }} //:rift-pjrt-sys-archive //:rift-pjrt-sys-static-archive
-          cp bazel-bin/rift-pjrt-sys-archive.tar.gz $OUTPUT
-          cp bazel-bin/rift-pjrt-sys-static-archive.tar.gz $OUTPUT_STATIC
+          cp bazel-bin/rift-pjrt-sys-archive.tar.gz ${{ matrix.config.output }}
+          cp bazel-bin/rift-pjrt-sys-static-archive.tar.gz ${{ matrix.config.output.replace('-sys', '-sys-static', 1) }}
       - name: Upload '${{ matrix.config.output }}'
         uses: actions/upload-artifact@v4
         with:
