@@ -11,102 +11,46 @@ permissions:
 
 jobs:
   build:
-    name: Build [${{ matrix.config.output }}]
+    name: Build [${{ matrix.config.os }}-${{ matrix.config.architecture }}-${{ matrix.config.device }}]
     runs-on: ${{ matrix.config.runner }}
     strategy:
       fail-fast: false
       matrix:
         config:
-          # Shared Library Configurations
           - output: rift-pjrt-sys-linux-amd64-cpu.tar.gz
             os: linux
             architecture: amd64
             device: cpu
             config: "--config=linux"
-            target: //:rift-pjrt-sys
             artifact: librift-pjrt-sys.so
             runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64/spot=false
-
           - output: rift-pjrt-sys-linux-amd64-cuda.tar.gz
             os: linux
             architecture: amd64
             device: cuda
             config: "--config=linux --config=cuda"
-            target: //:rift-pjrt-sys
             artifact: librift-pjrt-sys.so
             runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64/image=ubuntu22-gpu-x64/disk=large/tag=ubuntu22-cuda-x64/spot=false
-
           - output: rift-pjrt-sys-linux-amd64-rocm.tar.gz
             os: linux
             architecture: amd64
             device: rocm
             config: "--config=linux --config=rocm"
-            target: //:rift-pjrt-sys
             artifact: librift-pjrt-sys.so
             runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64/image=ubuntu22-gpu-x64/disk=large/tag=ubuntu22-rocm-x64/spot=false
-
           - output: rift-pjrt-sys-darwin-arm64-cpu.tar.gz
             os: darwin
             architecture: arm64
             device: cpu
             config: "--config=macos"
-            target: //:rift-pjrt-sys
             artifact: librift-pjrt-sys.dylib
             runner: macos-15
-
           - output: rift-pjrt-sys-windows-amd64-cpu.tar.gz
             os: windows
             architecture: amd64
             device: cpu
             config: "--config=windows"
-            target: //:rift-pjrt-sys
             artifact: rift-pjrt-sys.dll
-            runner: runs-on=${{ github.run_id }}/image=windows22-base-x64/family=c7i-flex.8xlarge/disk=large/spot=false
-
-          # Static Library Configurations
-          - output: rift-pjrt-sys-static-linux-amd64-cpu.tar.gz
-            os: linux
-            architecture: amd64
-            device: cpu
-            config: "--config=linux"
-            target: //:rift-pjrt-sys-static
-            artifact: librift-pjrt-sys-static.a
-            runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64/spot=false
-
-          - output: rift-pjrt-sys-static-linux-amd64-cuda.tar.gz
-            os: linux
-            architecture: amd64
-            device: cuda
-            config: "--config=linux --config=cuda"
-            target: //:rift-pjrt-sys-static
-            artifact: librift-pjrt-sys-static.a
-            runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64/image=ubuntu22-gpu-x64/disk=large/tag=ubuntu22-cuda-x64/spot=false
-
-          - output: rift-pjrt-sys-static-linux-amd64-rocm.tar.gz
-            os: linux
-            architecture: amd64
-            device: rocm
-            config: "--config=linux --config=rocm"
-            target: //:rift-pjrt-sys-static
-            artifact: librift-pjrt-sys-static.a
-            runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64/image=ubuntu22-gpu-x64/disk=large/tag=ubuntu22-rocm-x64/spot=false
-
-          - output: rift-pjrt-sys-static-darwin-arm64-cpu.tar.gz
-            os: darwin
-            architecture: arm64
-            device: cpu
-            config: "--config=macos"
-            target: //:rift-pjrt-sys-static
-            artifact: librift-pjrt-sys-static.a
-            runner: macos-15
-
-          - output: rift-pjrt-sys-static-windows-amd64-cpu.tar.gz
-            os: windows
-            architecture: amd64
-            device: cpu
-            config: "--config=windows"
-            target: //:rift-pjrt-sys-static
-            artifact: rift-pjrt-sys-static.lib
             runner: runs-on=${{ github.run_id }}/image=windows22-base-x64/family=c7i-flex.8xlarge/disk=large/spot=false
     outputs:
       xla_commit_id: ${{ steps.extract_xla_commit_id.outputs.xla_commit_id }}
@@ -164,11 +108,14 @@ jobs:
           XLA_COMMIT_ID=$(grep 'XLA_COMMIT = "' WORKSPACE | sed 's/.*XLA_COMMIT = "\([^"]*\)".*/\1/')
           echo "Extracted XLA Commit ID: $XLA_COMMIT_ID"
           echo "xla_commit_id=$XLA_COMMIT_ID" >> "$GITHUB_OUTPUT"
-      - name: Build ${{ matrix.config.output }}
+      - name: Build Library
         working-directory: ./xla-artifacts
         run: |
-          bazel build ${{ matrix.config.config }} ${{ matrix.config.target }}
-          cp bazel-bin/rift-pjrt-sys${{ endsWith(matrix.config.target, '-static') && '-static' || '' }}-archive.tar.gz ${{ matrix.config.output }}
+          OUTPUT="${{ matrix.config.output }}"
+          OUTPUT_STATIC=$(echo "$OUTPUT" | sed 's/-sys/-sys-static/')
+          bazel build ${{ matrix.config.config }} //:rift-pjrt-sys-archive //:rift-pjrt-sys-static-archive
+          cp bazel-bin/rift-pjrt-sys-archive.tar.gz $OUTPUT
+          cp bazel-bin/rift-pjrt-sys-static-archive.tar.gz $OUTPUT_STATIC
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
