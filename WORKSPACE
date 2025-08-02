@@ -18,6 +18,8 @@ http_archive(
         "https://storage.googleapis.com/mirror.tensorflow.org/github.com/openxla/xla/archive/{commit}.tar.gz".format(commit = XLA_COMMIT),
         "https://github.com/openxla/xla/archive/{commit}.tar.gz".format(commit = XLA_COMMIT),
     ],
+    patches = ["//patches:0001-nvptx-compiler.patch"],
+    patch_args = ["-p1", "--ignore-whitespace"],
 )
 
 http_archive(

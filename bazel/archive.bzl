@@ -70,8 +70,20 @@ HEADERS = [
 def _build_archive_impl(ctx):
     output = ctx.actions.declare_file(ctx.label.name + ".tar.gz")
 
+    protos = []
     headers = []
     libraries = []
+
+    if ProtoInfo in ctx.attr.rift_pjrt_sys_protos:
+        proto_info = ctx.attr.rift_pjrt_sys_protos[ProtoInfo]
+        transitive_proto_sources = proto_info.transitive_sources.to_list()
+        transitive_descriptors = proto_info.transitive_descriptor_sets.to_list()
+        proto_files = transitive_proto_sources + transitive_descriptors
+        for output_file in proto_files:
+            path = output_file.short_path
+            if path.startswith("../xla/"):
+                path = path[len("../xla/"):]
+                protos.append((output_file, path))
 
     if CcInfo in ctx.attr.rift_pjrt_sys_headers:
         cc_info = ctx.attr.rift_pjrt_sys_headers[CcInfo]
@@ -92,10 +104,22 @@ def _build_archive_impl(ctx):
     if ctx.attr.rift_pjrt_sys_windows_interface_library:
         if DefaultInfo in ctx.attr.rift_pjrt_sys_windows_interface_library:
             for output_file in ctx.attr.rift_pjrt_sys_windows_interface_library[DefaultInfo].files.to_list():
-                # Rename `rift_pjrt_sys.if.lib` to `rift_pjrt_sys.lib`.
+                # TODO(eaplatanios): Rename `rift_pjrt_sys.if.lib` to `rift_pjrt_sys.lib`.
                 libraries.append(output_file)
 
     copy_commands = []
+    for proto, path in protos:
+        copy_commands.append("""
+            target_dir="$archive_dir/protos/$(dirname "{path}")"
+            mkdir -p "$target_dir"
+            chmod 755 "$target_dir"
+
+            cp "{proto}" "$archive_dir/protos/{path}"
+            chmod 644 "$archive_dir/protos/{path}"
+        """.format(
+            proto = proto.path,
+            path = path,
+        ))
     for header, path in headers:
         copy_commands.append("""
             target_dir="$archive_dir/include/$(dirname "{path}")"
@@ -170,6 +194,7 @@ def _build_archive_impl(ctx):
 build_archive = rule(
     implementation = _build_archive_impl,
     attrs = {
+        "rift_pjrt_sys_protos": attr.label(providers = [ProtoInfo]),
         "rift_pjrt_sys_headers": attr.label(providers = [CcInfo]),
         "rift_pjrt_sys_library": attr.label(providers = [DefaultInfo]),
         "rift_pjrt_sys_windows_interface_library": attr.label(providers = [DefaultInfo]),

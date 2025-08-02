@@ -131,14 +131,21 @@ filegroup(
     output_group = "interface_library",
 )
 
+proto_library(
+    name = "rift-pjrt-sys-protos",
+    deps = ["@xla//xla/pjrt/proto:compile_options_proto"],
+)
+
 build_archive(
     name = "rift-pjrt-sys-static-archive",
+    rift_pjrt_sys_protos = ":rift-pjrt-sys-protos",
     rift_pjrt_sys_headers = ":rift-pjrt-sys",
     rift_pjrt_sys_library = ":rift-pjrt-sys-static",
 )
 
 build_archive(
     name = "rift-pjrt-sys-archive",
+    rift_pjrt_sys_protos = ":rift-pjrt-sys-protos",
     rift_pjrt_sys_headers = ":rift-pjrt-sys",
     rift_pjrt_sys_library = ":rift-pjrt-sys",
     rift_pjrt_sys_windows_interface_library = ":rift-pjrt-sys-windows-interface-library",
