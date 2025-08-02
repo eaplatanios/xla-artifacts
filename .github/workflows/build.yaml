@@ -55,6 +55,17 @@ jobs:
     outputs:
       xla_commit_id: ${{ steps.extract_xla_commit_id.outputs.xla_commit_id }}
     steps:
+      - name: Check Out Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          path: "xla-artifacts"
+      - name: Extract XLA Commit ID
+        id: extract_xla_commit_id
+        run: |
+          XLA_COMMIT_ID=$(grep 'XLA_COMMIT = "' WORKSPACE | sed 's/.*XLA_COMMIT = "\([^"]*\)".*/\1/')
+          echo "Extracted XLA Commit ID: $XLA_COMMIT_ID"
+          echo "xla_commit_id=$XLA_COMMIT_ID" >> "$GITHUB_OUTPUT"
       - name: Install Chocolatey, Git, Visual Studio 2019 Build Tools, and LLVM 18
         if: ${{ matrix.config.os == 'windows' }}
         run: |
@@ -97,17 +108,6 @@ jobs:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}
           repository-cache: true
-      - name: Check Out Repository
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref }}
-          path: "xla-artifacts"
-      - name: Extract XLA Commit ID
-        id: extract_xla_commit_id
-        run: |
-          XLA_COMMIT_ID=$(grep 'XLA_COMMIT = "' WORKSPACE | sed 's/.*XLA_COMMIT = "\([^"]*\)".*/\1/')
-          echo "Extracted XLA Commit ID: $XLA_COMMIT_ID"
-          echo "xla_commit_id=$XLA_COMMIT_ID" >> "$GITHUB_OUTPUT"
       - name: Build Library
         working-directory: ./xla-artifacts
         run: |
