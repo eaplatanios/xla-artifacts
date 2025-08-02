@@ -122,10 +122,10 @@ jobs:
         with:
           name: ${{ matrix.config.output }}
           path: xla-artifacts/${{ matrix.config.output }}
-      - name: Upload '${{ matrix.config.output.replace('-sys', '-sys-static', count=1) }}'
+      - name: Upload '${{ matrix.config.output.replace('-sys', '-sys-static', 1) }}'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.config.output.replace('-sys', '-sys-static', count=1) }}
+          name: ${{ matrix.config.output.replace('-sys', '-sys-static', 1) }}
           path: xla-artifacts/${{ matrix.config.output.replace('-sys', '-sys-static', count=1) }}
 
   release:
