@@ -102,12 +102,18 @@ build:cuda --@local_config_cuda//cuda:include_cuda_libs=true
 build:cuda --crosstool_top=@local_config_cuda//crosstool:toolchain
 
 # ROCm Configuration
+build:rocm --noincompatible_enable_cc_toolchain_resolution
+build:rocm --@rules_ml_toolchain//common:enable_hermetic_cc=False
+build:rocm --repo_env USE_HERMETIC_CC_TOOLCHAIN=0
 build:rocm --repo_env="OS=ubuntu_22.04"
 build:rocm --repo_env="ROCM_VERSION=6.4.1"
 build:rocm --action_env TF_ROCM_AMDGPU_TARGETS="gfx900,gfx906,gfx908,gfx90a,gfx940,gfx941,gfx942,gfx1030,gfx1100,gfx1200,gfx1201"
-build:rocm --repo_env ROCM_PATH="/opt/rocm-6.4.1/"
+# build:rocm --repo_env ROCM_PATH="/opt/rocm-6.4.1/"
 build:rocm --crosstool_top=@local_config_rocm//crosstool:toolchain
 build:rocm --define=using_rocm=true --define=using_rocm_hipcc=true
+build:rocm --define=tensorflow_mkldnn_contraction_kernel=0
+build:rocm --define=xnn_enable_avxvnniint8=false
+build:rocm --define=xnn_enable_avx512fp16=false
 build:rocm --repo_env TF_NEED_ROCM=1
 build:rocm --action_env=CLANG_COMPILER_PATH="/usr/lib/llvm-18/bin/clang"
 build:rocm --action_env=TF_ROCM_CLANG="1"
