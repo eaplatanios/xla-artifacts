@@ -93,7 +93,7 @@ jobs:
           sudo apt update -y
           sudo apt install llvm-18 lld-18 clang-18 libnuma-dev -y
           wget https://repo.radeon.com/amdgpu-install/6.4.1/ubuntu/jammy/amdgpu-install_6.4.60401-1_all.deb
-          sudo apt install ./amdgpu-install_6.4.60401-1_all.deb -y
+          sudo apt install ./amdgpu-install_6.4.60401-1_all.deb -y --allow-downgrades
           sudo amdgpu-install --usecase=hiplibsdk --no-dkms -y
       - name: Install Bazel
         uses: bazel-contrib/setup-bazel@0.15.0
