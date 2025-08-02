@@ -99,9 +99,9 @@ jobs:
         uses: bazel-contrib/setup-bazel@0.15.0
         with:
           bazelisk-version: 1.26.0
-          # bazelisk-cache: true
-          # disk-cache: ${{ github.workflow }}
-          # repository-cache: true
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}
+          repository-cache: true
       - name: Extract XLA Commit ID
         id: extract_xla_commit_id
         shell: bash
