@@ -1,13 +1,5 @@
 name: Build Artifacts
 
-on:
-  workflow_dispatch:
-    inputs:
-      xla_commit:
-        type: string
-        default: a645838b7979b6c81ec991cab05b8b183523e13b
-        description: OpenXLA repository commit hash for which to compile binaries.
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -114,7 +106,8 @@ jobs:
             target: //:rift-pjrt-sys-static
             artifact: rift-pjrt-sys-static.lib
             runner: runs-on=${{ github.run_id }}/image=windows22-base-x64/family=c7i-flex.8xlarge/disk=large/spot=false
-
+    outputs:
+      xla_commit_id: ${{ steps.extract_xla_commit_id.outputs.xla_commit_id }}
     steps:
       - name: Install Chocolatey, Git, Visual Studio 2019 Build Tools, and LLVM 18
         if: ${{ matrix.config.os == 'windows' }}
@@ -136,13 +129,11 @@ jobs:
           # Install LLVM 18
           choco install llvm --version 18.1.8 -y
           echo "C:\Program Files\LLVM\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-
       - name: Install Python
         uses: actions/setup-python@v5
         if: ${{ matrix.config.os == 'windows' }}
         with:
           python-version: "3.11.9"
-
       - name: Install ROCm
         if: ${{ matrix.config.device == 'rocm' }}
         run: |
@@ -153,7 +144,6 @@ jobs:
           wget https://repo.radeon.com/amdgpu-install/6.4.1/ubuntu/jammy/amdgpu-install_6.4.60401-1_all.deb
           sudo apt install ./amdgpu-install_6.4.60401-1_all.deb -y
           sudo amdgpu-install --usecase=hiplibsdk --no-dkms -y
-
       - name: Install Bazel
         uses: bazel-contrib/setup-bazel@0.15.0
         with:
@@ -161,19 +151,22 @@ jobs:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}
           repository-cache: true
-
       - name: Check Out Repository
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
           path: "xla-artifacts"
-
+      - name: Extract XLA Commit ID
+        id: extract_xla_commit_id
+        run: |
+          XLA_COMMIT_ID=$(grep -oP 'XLA_COMMIT = "\K[a-f0-9]{40}"' WORKSPACE)
+          echo "Extracted XLA Commit ID: $XLA_COMMIT_ID"
+          echo "xla_commit_id=$XLA_COMMIT_ID" >> "$GITHUB_OUTPUT"
       - name: Build ${{ matrix.config.output }}
         working-directory: ./xla-artifacts
         run: |
           bazel build ${{ matrix.config.config }} ${{ matrix.config.target }}
           cp bazel-bin/rift-pjrt-sys${{ endsWith(matrix.config.target, '-static') && '-static' || '' }}-archive.tar.gz ${{ matrix.config.output }}
-
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -190,5 +183,5 @@ jobs:
       - name: Release Artifacts
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: xla-${{ inputs.xla_commit }}
+          tag_name: xla-${{ needs.build.outputs.xla_commit_id }}
           files: "*.tar.gz/*.tar.gz"
