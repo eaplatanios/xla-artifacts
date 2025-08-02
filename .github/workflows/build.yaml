@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   build:
-    name: Build PJRT Plugin [${{ matrix.config.platform }}]
+    name: Build [${{ matrix.config.output }}]
     runs-on: ${{ matrix.config.runner }}
     strategy:
       fail-fast: false
