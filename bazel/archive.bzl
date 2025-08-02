@@ -2,10 +2,10 @@ load("@com_google_protobuf//bazel/common:proto_info.bzl", "ProtoInfo")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 
 STRIP_PREFIXES = [
-    "external/llvm-project/mlir/include/",
-    "external/shardy/",
-    "external/stablehlo/",
-    "external/xla/",
+    "llvm-project/mlir/include/",
+    "shardy/",
+    "stablehlo/",
+    "xla/",
 ]
 
 HEADERS = [
@@ -95,6 +95,8 @@ def _build_archive_impl(ctx):
         # Get headers from the compilation context.
         for header in cc_info.compilation_context.headers.to_list():
             path = header.path
+            if path.startswith("external/"):
+                path = path[len("external/"):]
             for prefix in STRIP_PREFIXES:
                 if path.startswith(prefix):
                     path = path[len(prefix):]
@@ -103,7 +105,13 @@ def _build_archive_impl(ctx):
 
     if DefaultInfo in ctx.attr.rift_pjrt_sys_td_files:
         for output_file in ctx.attr.rift_pjrt_sys_td_files[DefaultInfo].files.to_list():
-            path = output_file.path
+            path = output_file.short_path
+            if not path.endswith(".td"):
+                continue
+            if path.startswith("../"):
+                path = path[len("../"):]
+            if path.startswith("external/"):
+                path = path[len("external/"):]
             for prefix in STRIP_PREFIXES:
                 if path.startswith(prefix):
                     path = path[len(prefix):]
@@ -122,6 +130,12 @@ def _build_archive_impl(ctx):
     copy_commands = []
     for proto, path in protos:
         copy_commands.append("""
+            path="{path}"
+            if [[ "$path" =~ bazel-out/[^/]+/bin/(.*) ]]; then
+                # For generated files, use the path after bin/
+                path="${{BASH_REMATCH[1]}}"
+            fi
+
             target_dir="$archive_dir/protos/$(dirname "{path}")"
             mkdir -p "$target_dir"
             chmod 755 "$target_dir"
@@ -134,24 +148,36 @@ def _build_archive_impl(ctx):
         ))
     for td_file, path in td_files:
         copy_commands.append("""
-            target_dir="$archive_dir/td/$(dirname "{path}")"
+            path="{path}"
+            if [[ "$path" =~ bazel-out/[^/]+/bin/(.*) ]]; then
+                # For generated files, use the path after bin/
+                path="${{BASH_REMATCH[1]}}"
+            fi
+
+            target_dir="$archive_dir/td/$(dirname "$path")"
             mkdir -p "$target_dir"
             chmod 755 "$target_dir"
 
-            cp "{td_file}" "$archive_dir/td/{path}"
-            chmod 644 "$archive_dir/td/{path}"
+            cp "{td_file}" "$archive_dir/td/$path"
+            chmod 644 "$archive_dir/td/$path"
         """.format(
             td_file = td_file.path,
             path = path,
         ))
     for header, path in headers:
         copy_commands.append("""
-            target_dir="$archive_dir/include/$(dirname "{path}")"
+            path="{path}"
+            if [[ "$path" =~ bazel-out/[^/]+/bin/(.*) ]]; then
+                # For generated files, use the path after bin/
+                path="${{BASH_REMATCH[1]}}"
+            fi
+
+            target_dir="$archive_dir/include/$(dirname "$path")"
             mkdir -p "$target_dir"
             chmod 755 "$target_dir"
 
-            cp "{header}" "$archive_dir/include/{path}"
-            chmod 644 "$archive_dir/include/{path}"
+            cp "{header}" "$archive_dir/include/$path"
+            chmod 644 "$archive_dir/include/$path"
         """.format(
             header = header.path,
             path = path,
