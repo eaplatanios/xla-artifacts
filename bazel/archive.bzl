@@ -2,10 +2,11 @@ load("@com_google_protobuf//bazel/common:proto_info.bzl", "ProtoInfo")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 
 STRIP_PREFIXES = [
-    "external/llvm-project/mlir/include/",
-    "external/shardy/",
-    "external/stablehlo/",
-    "external/xla/",
+    "llvm-project/llvm/include/",
+    "llvm-project/mlir/include/",
+    "shardy/",
+    "stablehlo/",
+    "xla/",
 ]
 
 HEADERS = [
@@ -74,7 +75,7 @@ def _build_archive_impl(ctx):
     output = ctx.actions.declare_file(ctx.label.name + ".tar.gz")
 
     protos = []
-    td_files = []
+    # td_files = []
     headers = []
     libraries = []
 
@@ -95,19 +96,27 @@ def _build_archive_impl(ctx):
         # Get headers from the compilation context.
         for header in cc_info.compilation_context.headers.to_list():
             path = header.path
+            if path.startswith("external/"):
+                path = path[len("external/"):]
             for prefix in STRIP_PREFIXES:
                 if path.startswith(prefix):
                     path = path[len(prefix):]
             if path in HEADERS:
                 headers.append((header, path))
 
-    if DefaultInfo in ctx.attr.rift_pjrt_sys_td_files:
-        for output_file in ctx.attr.rift_pjrt_sys_td_files[DefaultInfo].files.to_list():
-            path = output_file.path
-            for prefix in STRIP_PREFIXES:
-                if path.startswith(prefix):
-                    path = path[len(prefix):]
-            td_files.append((output_file, path))
+    # if DefaultInfo in ctx.attr.rift_pjrt_sys_td_files:
+    #     for output_file in ctx.attr.rift_pjrt_sys_td_files[DefaultInfo].files.to_list():
+    #         path = output_file.short_path
+    #         if not path.endswith(".td"):
+    #             continue
+    #         if path.startswith("../"):
+    #             path = path[len("../"):]
+    #         if path.startswith("external/"):
+    #             path = path[len("external/"):]
+    #         for prefix in STRIP_PREFIXES:
+    #             if path.startswith(prefix):
+    #                 path = path[len(prefix):]
+    #         td_files.append((output_file, path))
 
     # Collect output files from DefaultInfo.
     if DefaultInfo in ctx.attr.rift_pjrt_sys_library:
@@ -122,6 +131,12 @@ def _build_archive_impl(ctx):
     copy_commands = []
     for proto, path in protos:
         copy_commands.append("""
+            path="{path}"
+            if [[ "$path" =~ bazel-out/[^/]+/bin/(.*) ]]; then
+                # For generated files, use the path after bin/
+                path="${{BASH_REMATCH[1]}}"
+            fi
+
             target_dir="$archive_dir/protos/$(dirname "{path}")"
             mkdir -p "$target_dir"
             chmod 755 "$target_dir"
@@ -132,26 +147,38 @@ def _build_archive_impl(ctx):
             proto = proto.path,
             path = path,
         ))
-    for td_file, path in td_files:
-        copy_commands.append("""
-            target_dir="$archive_dir/td/$(dirname "{path}")"
-            mkdir -p "$target_dir"
-            chmod 755 "$target_dir"
+    # for td_file, path in td_files:
+    #     copy_commands.append("""
+    #         path="{path}"
+    #         if [[ "$path" =~ bazel-out/[^/]+/bin/(.*) ]]; then
+    #             # For generated files, use the path after bin/
+    #             path="${{BASH_REMATCH[1]}}"
+    #         fi
 
-            cp "{td_file}" "$archive_dir/td/{path}"
-            chmod 644 "$archive_dir/td/{path}"
-        """.format(
-            td_file = td_file.path,
-            path = path,
-        ))
+    #         target_dir="$archive_dir/td/$(dirname "$path")"
+    #         mkdir -p "$target_dir"
+    #         chmod 755 "$target_dir"
+
+    #         cp "{td_file}" "$archive_dir/td/$path"
+    #         chmod 644 "$archive_dir/td/$path"
+    #     """.format(
+    #         td_file = td_file.path,
+    #         path = path,
+    #     ))
     for header, path in headers:
         copy_commands.append("""
-            target_dir="$archive_dir/include/$(dirname "{path}")"
+            path="{path}"
+            if [[ "$path" =~ bazel-out/[^/]+/bin/(.*) ]]; then
+                # For generated files, use the path after bin/
+                path="${{BASH_REMATCH[1]}}"
+            fi
+
+            target_dir="$archive_dir/include/$(dirname "$path")"
             mkdir -p "$target_dir"
             chmod 755 "$target_dir"
 
-            cp "{header}" "$archive_dir/include/{path}"
-            chmod 644 "$archive_dir/include/{path}"
+            cp "{header}" "$archive_dir/include/$path"
+            chmod 644 "$archive_dir/include/$path"
         """.format(
             header = header.path,
             path = path,
@@ -191,7 +218,8 @@ def _build_archive_impl(ctx):
         ))
 
     ctx.actions.run_shell(
-        inputs = [proto[0] for proto in protos] + [td_file[0] for td_file in td_files] + [header[0] for header in headers] + libraries,
+        inputs = [proto[0] for proto in protos] + [header[0] for header in headers] + libraries,
+        # inputs = [proto[0] for proto in protos] + [td_file[0] for td_file in td_files] + [header[0] for header in headers] + libraries,
         outputs = [output],
         command = """
             set -e
@@ -219,7 +247,7 @@ build_archive = rule(
     implementation = _build_archive_impl,
     attrs = {
         "rift_pjrt_sys_protos": attr.label(providers = [ProtoInfo]),
-        "rift_pjrt_sys_td_files": attr.label(providers = [DefaultInfo]),
+        # "rift_pjrt_sys_td_files": attr.label(providers = [DefaultInfo]),
         "rift_pjrt_sys_headers": attr.label(providers = [CcInfo]),
         "rift_pjrt_sys_library": attr.label(providers = [DefaultInfo]),
         "rift_pjrt_sys_windows_interface_library": attr.label(providers = [DefaultInfo]),
