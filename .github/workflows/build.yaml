@@ -23,7 +23,7 @@ jobs:
             device: cpu
             config: "--config=linux"
             artifact: librift-pjrt-sys.so
-            runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64/spot=false
+            runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64/disk=large/spot=false
           - output: rift-pjrt-sys-linux-amd64-cuda.tar.gz
             os: linux
             architecture: amd64
