@@ -1,8 +1,9 @@
-load("//bazel:archive.bzl", "build_archive")
-
 load("@buildifier_prebuilt//:rules.bzl", "buildifier")
+load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@xla//xla/tsl:tsl.bzl", "tsl_copts")
+load("//bazel:archive.bzl", "build_archive")
 
 # ----------------------------------------------------
 # Bazel
@@ -102,19 +103,42 @@ RIFT_PJRT_SYS_DEPENDENCIES = XLA_DEPENDENCIES + select({
     ],
 })
 
-cc_static_library(
-    name = "rift-pjrt-sys-static",
-    deps = RIFT_PJRT_SYS_DEPENDENCIES,
-)
-
-cc_binary(
-    name = "rift-pjrt-sys",
+cc_library(
+    name = "rift-pjrt-sys-library",
     additional_linker_inputs = [
         ":rift_pjrt_sys_exported_symbols.txt",
         ":rift_pjrt_sys_version_script.lds",
     ],
     copts = tsl_copts(),
     linkopts = select({
+        "@xla//xla/tsl:windows": [
+            "/FORCE:MULTIPLE",
+        ],
+        "@xla//xla/tsl:macos": [
+            # We export the symbols specified in `rift_pjrt_sys_exported_symbols.txt`.
+            "-Wl,-exported_symbols_list,$(location :rift_pjrt_sys_exported_symbols.txt)",
+            "-Wl,-undefined,error",
+        ],
+        "//conditions:default": [
+            "-Wl,--version-script,$(location :rift_pjrt_sys_version_script.lds)",
+            "-Wl,--no-undefined",
+        ],
+    }),
+    win_def_file = ":rift_pjrt_sys.def",
+    deps = RIFT_PJRT_SYS_DEPENDENCIES,
+    # linkstatic = True,
+    alwayslink = True,
+)
+
+cc_static_library(
+    name = "rift-pjrt-sys-static",
+    deps = [":rift-pjrt-sys-library"],
+)
+
+cc_binary(
+    name = "rift-pjrt-sys",
+    linkopts = select({
+        "@xla//xla/tsl:windows": [],
         "@xla//xla/tsl:macos": [
             # We set the `install_name`, such that the library is looked up in the `RPATH`
             # at runtime. Otherwise, the `install_name` would be an arbitrary path within
@@ -124,24 +148,14 @@ cc_binary(
             # We set `RPATH` to the same directory as `librift-pjrt-sys.dylib`, so that loading PJRT
             # plugins from within the same directory works out of the box.
             "-Wl,-rpath,@loader_path/",
-
-            # We export the symbols specified in `rift_pjrt_sys_exported_symbols.txt`.
-            "-Wl,-exported_symbols_list,$(location :rift_pjrt_sys_exported_symbols.txt)",
-            "-Wl,-undefined,error",
-        ],
-        "@xla//xla/tsl:windows": [
-            "/FORCE:MULTIPLE",
         ],
         "//conditions:default": [
             "-Wl,-soname,librift-pjrt-sys.so",
             "-Wl,-rpath='$$ORIGIN'",
-            "-Wl,--version-script,$(location :rift_pjrt_sys_version_script.lds)",
-            "-Wl,--no-undefined",
         ],
     }),
     linkshared = True,
-    win_def_file = ":rift_pjrt_sys.def",
-    deps = RIFT_PJRT_SYS_DEPENDENCIES,
+    deps = [":rift-pjrt-sys-library"],
 )
 
 filegroup(
@@ -205,17 +219,17 @@ proto_library(
 
 build_archive(
     name = "rift-pjrt-sys-static-archive",
-    rift_pjrt_sys_protos = ":rift-pjrt-sys-protos",
-    rift_pjrt_sys_td_files = ":rift-pjrt-sys-td-files",
     rift_pjrt_sys_headers = ":rift-pjrt-sys",
     rift_pjrt_sys_library = ":rift-pjrt-sys-static",
+    rift_pjrt_sys_protos = ":rift-pjrt-sys-protos",
+    rift_pjrt_sys_td_files = ":rift-pjrt-sys-td-files",
 )
 
 build_archive(
     name = "rift-pjrt-sys-archive",
-    rift_pjrt_sys_protos = ":rift-pjrt-sys-protos",
-    rift_pjrt_sys_td_files = ":rift-pjrt-sys-td-files",
     rift_pjrt_sys_headers = ":rift-pjrt-sys",
     rift_pjrt_sys_library = ":rift-pjrt-sys",
+    rift_pjrt_sys_protos = ":rift-pjrt-sys-protos",
+    rift_pjrt_sys_td_files = ":rift-pjrt-sys-td-files",
     rift_pjrt_sys_windows_interface_library = ":rift-pjrt-sys-windows-interface-library",
 )

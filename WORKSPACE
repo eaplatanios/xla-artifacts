@@ -12,14 +12,17 @@ JAX_SHA256 = "b2a2fc74293c8f116104f42c17e5d5aa9e168fb128ee16d20cd41bdd736a62aa"
 
 http_archive(
     name = "xla",
+    patch_args = [
+        "-p1",
+        "--ignore-whitespace",
+    ],
+    patches = ["//patches:xla.patch"],
     sha256 = XLA_SHA256,
     strip_prefix = "xla-{commit}".format(commit = XLA_COMMIT),
     urls = [
         "https://storage.googleapis.com/mirror.tensorflow.org/github.com/openxla/xla/archive/{commit}.tar.gz".format(commit = XLA_COMMIT),
         "https://github.com/openxla/xla/archive/{commit}.tar.gz".format(commit = XLA_COMMIT),
     ],
-    patches = ["//patches:xla.patch"],
-    patch_args = ["-p1", "--ignore-whitespace"],
 )
 
 http_archive(
@@ -78,13 +81,16 @@ xla_workspace0()
 
 http_archive(
     name = "rules_ml_toolchain",
+    patch_args = [
+        "-p1",
+        "--ignore-whitespace",
+    ],
+    patches = ["//patches:rules_ml_toolchain.patch"],
     sha256 = "d486aadba1b4415da16d744e4511c7a35d4d1604c61ed562d37519d5ed072a86",
     strip_prefix = "rules_ml_toolchain-69a7b71c9424ddbcc27cb7814ecfd482510b1947",
     urls = [
         "https://github.com/google-ml-infra/rules_ml_toolchain/archive/69a7b71c9424ddbcc27cb7814ecfd482510b1947.tar.gz",
     ],
-    patches = ["//patches:rules_ml_toolchain.patch"],
-    patch_args = ["-p1", "--ignore-whitespace"],
 )
 
 load(

@@ -1,3 +1,6 @@
+load("@com_google_protobuf//bazel/common:proto_info.bzl", "ProtoInfo")
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
+
 STRIP_PREFIXES = [
     "external/llvm-project/mlir/include/",
     "external/shardy/",
@@ -66,7 +69,6 @@ HEADERS = [
     "xla/pjrt/c/pjrt_c_api_triton_extension.h",
     "xla/service/spmd/shardy/integrations/c/passes.h",
 ]
-
 
 def _build_archive_impl(ctx):
     output = ctx.actions.declare_file(ctx.label.name + ".tar.gz")
