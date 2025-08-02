@@ -116,22 +116,15 @@ jobs:
         shell: bash
         run: |
           OUTPUT=${{ matrix.config.output }}
-          OUTPUT_STATIC=$(echo '${{ matrix.config.output }}' | sed 's/-sys/-sys-static/')
-          bazel build ${{ matrix.config.config }} //:rift-pjrt-sys-archive //:rift-pjrt-sys-static-archive
-          cp bazel-bin/rift-pjrt-sys-archive.tar.gz $OUTPUT
-          cp bazel-bin/rift-pjrt-sys-static-archive.tar.gz $OUTPUT_STATIC
-          echo "library=$OUTPUT" >> $GITHUB_OUTPUT
-          echo "static_library=$OUTPUT_STATIC" >> $GITHUB_OUTPUT
-      - name: Build Library
-        if: ${{ matrix.config.device == 'rocm' }}
-        working-directory: ./xla-artifacts
-        id: build_library
-        shell: bash
-        run: |
-          OUTPUT=${{ matrix.config.output }}
           bazel build ${{ matrix.config.config }} //:rift-pjrt-sys-archive
           cp bazel-bin/rift-pjrt-sys-archive.tar.gz $OUTPUT
           echo "library=$OUTPUT" >> $GITHUB_OUTPUT
+          if [[ ${{ matrix.config.device != 'rocm' }} ]]; then
+            OUTPUT_STATIC=$(echo '${{ matrix.config.output }}' | sed 's/-sys/-sys-static/')
+            bazel build ${{ matrix.config.config }} //:rift-pjrt-sys-static-archive
+            cp bazel-bin/rift-pjrt-sys-static-archive.tar.gz $OUTPUT_STATIC
+            echo "static_library=$OUTPUT_STATIC" >> $GITHUB_OUTPUT
+          fi
       - name: Upload '${{ steps.build_library.outputs.library }}'
         uses: actions/upload-artifact@v4
         with:
