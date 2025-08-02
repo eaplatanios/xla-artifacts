@@ -1,7 +1,6 @@
 name: Build Artifacts
 
-on:
-  workflow_call:
+on: workflow_dispatch
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
