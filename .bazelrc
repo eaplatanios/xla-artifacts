@@ -105,7 +105,7 @@ build:cuda --crosstool_top=@local_config_cuda//crosstool:toolchain
 build:rocm --repo_env="OS=ubuntu_22.04"
 build:rocm --repo_env="ROCM_VERSION=6.4.1"
 build:rocm --action_env TF_ROCM_AMDGPU_TARGETS="gfx900,gfx906,gfx908,gfx90a,gfx940,gfx941,gfx942,gfx1030,gfx1100,gfx1200,gfx1201"
-# build:rocm --repo_env ROCM_PATH="/opt/rocm-6.4.1/"
+build:rocm --repo_env ROCM_PATH="/opt/rocm-6.4.1/"
 build:rocm --crosstool_top=@local_config_rocm//crosstool:toolchain
 build:rocm --define=using_rocm=true --define=using_rocm_hipcc=true
 build:rocm --repo_env TF_NEED_ROCM=1
