@@ -75,6 +75,7 @@ def _build_archive_impl(ctx):
     output = ctx.actions.declare_file(ctx.label.name + ".tar.gz")
 
     protos = []
+
     # td_files = []
     headers = []
     libraries = []
@@ -147,6 +148,7 @@ def _build_archive_impl(ctx):
             proto = proto.path,
             path = path,
         ))
+
     # for td_file, path in td_files:
     #     copy_commands.append("""
     #         path="{path}"

@@ -258,8 +258,13 @@ cc_binary(
             "-Wl,--no-undefined",
         ],
     }),
-    win_def_file = ":pjrt_plugin.def",
     linkshared = True,
+    target_compatible_with = select({
+        "@local_config_cuda//:is_cuda_enabled": [],
+        "@local_config_rocm//rocm:using_hipcc": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    win_def_file = ":pjrt_plugin.def",
     deps = [
         "@xla//xla/pjrt/c:pjrt_c_api_gpu",
         "@xla//xla/service:gpu_plugin",
@@ -271,10 +276,5 @@ cc_binary(
             "@xla//xla/stream_executor:rocm_platform",
         ],
         "//conditions:default": [],
-    }),
-    target_compatible_with = select({
-        "@local_config_cuda//:is_cuda_enabled": [],
-        "@local_config_rocm//rocm:using_hipcc": [],
-        "//conditions:default": ["@platforms//:incompatible"],
     }),
 )
