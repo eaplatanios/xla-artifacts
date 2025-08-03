@@ -118,11 +118,6 @@ jobs:
           bazel build ${{ matrix.config.config }} //:rift-pjrt-sys-archive
           cp bazel-bin/rift-pjrt-sys-archive.tar.gz $OUTPUT
           echo "library=$OUTPUT" >> $GITHUB_OUTPUT
-      - name: Upload Dynamic Library
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.build_dynamic_library.outputs.library }}
-          path: xla-artifacts/${{ steps.build_dynamic_library.outputs.library }}
       - name: Build Static Library
         if: ${{ matrix.config.device != 'rocm' }}
         working-directory: ./xla-artifacts
@@ -133,6 +128,11 @@ jobs:
           bazel build ${{ matrix.config.config }} //:rift-pjrt-sys-static-archive
           cp bazel-bin/rift-pjrt-sys-static-archive.tar.gz $OUTPUT
           echo "library=$OUTPUT" >> $GITHUB_OUTPUT
+      - name: Upload Dynamic Library
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.build_dynamic_library.outputs.library }}
+          path: xla-artifacts/${{ steps.build_dynamic_library.outputs.library }}
       - name: Upload Static Library
         if: ${{ matrix.config.device != 'rocm' }}
         uses: actions/upload-artifact@v4
