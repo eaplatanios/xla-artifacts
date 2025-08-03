@@ -87,6 +87,7 @@ XLA_DEPENDENCIES = [
     "@xla//xla/service/spmd/shardy/integrations/c:xla_sdy_capi",
 ]
 
+# TODO(eaplatanios): Maybe this should never include the GPU dependencies.
 RIFT_PJRT_SYS_DEPENDENCIES = XLA_DEPENDENCIES + select({
     "@local_config_cuda//:is_cuda_enabled": [
         "@xla//xla/pjrt/c:pjrt_c_api_gpu",
@@ -115,7 +116,6 @@ cc_library(
             "/FORCE:MULTIPLE",
         ],
         "@xla//xla/tsl:macos": [
-            # We export the symbols specified in `rift_pjrt_sys_exported_symbols.txt`.
             "-Wl,-exported_symbols_list,$(location :rift_pjrt_sys_exported_symbols.txt)",
             "-Wl,-undefined,error",
         ],
@@ -232,4 +232,41 @@ build_archive(
     rift_pjrt_sys_protos = ":rift-pjrt-sys-protos",
     # rift_pjrt_sys_td_files = ":rift-pjrt-sys-td-files",
     rift_pjrt_sys_windows_interface_library = ":rift-pjrt-sys-windows-interface-library",
+)
+
+cc_binary(
+    name = "pjrt-gpu-plugin",
+    additional_linker_inputs = [
+        ":pjrt_plugin_exported_symbols.txt",
+        ":pjrt_plugin_version_script.lds",
+    ],
+    copts = tsl_copts(),
+    linkopts = select({
+        "@xla//xla/tsl:windows": [
+            "/FORCE:MULTIPLE",
+        ],
+        "@xla//xla/tsl:macos": [
+            "-Wl,-exported_symbols_list,$(location :pjrt_plugin_exported_symbols.txt)",
+            "-Wl,-undefined,error",
+        ],
+        "//conditions:default": [
+            "-Wl,--version-script,$(location :pjrt_plugin_version_script.lds)",
+            "-Wl,--no-undefined",
+        ],
+    }),
+    win_def_file = ":pjrt_plugin.def",
+    linkshared = True,
+    deps = [
+        "@xla//xla/pjrt/c:pjrt_c_api_gpu",
+    ] + select({
+        "@local_config_cuda//:is_cuda_enabled": [
+            "@xla//xla/service:gpu_plugin",
+            "@xla//xla/stream_executor:cuda_platform",
+        ],
+        "@local_config_rocm//rocm:using_hipcc": [
+            "@xla//xla/service:gpu_plugin",
+            "@xla//xla/stream_executor:rocm_platform",
+        ],
+        "//conditions:default": [],
+    }),
 )
