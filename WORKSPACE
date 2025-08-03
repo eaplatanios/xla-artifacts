@@ -2,6 +2,10 @@ workspace(name = "rift-pjrt-sys")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+# ----------------------------------------------------
+# XLA
+# ----------------------------------------------------
+
 XLA_COMMIT = "a12ee15c98cdbc9cb728d00f389a9353c7c8f1d4"
 
 XLA_SHA256 = "8bb449e8f7a4782e83662229d6d6b61e9845f42794cc65eaa7a6cc41a00defaf"
@@ -193,3 +197,20 @@ load(
 python_wheel_version_suffix_repository(
     name = "jax_wheel_version_suffix",
 )
+
+# ----------------------------------------------------
+# Bazel
+# ----------------------------------------------------
+
+http_archive(
+    name = "buildifier_prebuilt",
+    sha256 = "f98dd3d8f32661629b8cab11f02d7730bb8e03bd8af09dbbb268047889c8ff10",
+    strip_prefix = "buildifier-prebuilt-8.2.0.2",
+    urls = [
+        "http://github.com/keith/buildifier-prebuilt/archive/8.2.0.2.tar.gz",
+    ],
+)
+
+# load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
+
+# bazel_skylib_workspace()

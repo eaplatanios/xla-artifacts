@@ -18,7 +18,7 @@ jobs:
       matrix:
         config:
           - output: rift-pjrt-sys-linux-amd64-cpu.tar.gz
-            os: linux
+            os: linux # TODO(eaplatanios): We can build all three binaries for Linux on the same machine.
             architecture: amd64
             device: cpu
             config: "--config=linux"
