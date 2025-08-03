@@ -193,24 +193,3 @@ load(
 python_wheel_version_suffix_repository(
     name = "jax_wheel_version_suffix",
 )
-
-http_archive(
-    name = "buildifier_prebuilt",
-    sha256 = "f98dd3d8f32661629b8cab11f02d7730bb8e03bd8af09dbbb268047889c8ff10",
-    strip_prefix = "buildifier-prebuilt-8.2.0.2",
-    urls = [
-        "http://github.com/keith/buildifier-prebuilt/archive/8.2.0.2.tar.gz",
-    ],
-)
-
-load("@buildifier_prebuilt//:deps.bzl", "buildifier_prebuilt_deps")
-
-buildifier_prebuilt_deps()
-
-load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
-
-bazel_skylib_workspace()
-
-load("@buildifier_prebuilt//:defs.bzl", "buildifier_prebuilt_register_toolchains")
-
-buildifier_prebuilt_register_toolchains()
