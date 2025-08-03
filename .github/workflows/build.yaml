@@ -109,32 +109,36 @@ jobs:
           XLA_COMMIT_ID=$(grep 'XLA_COMMIT = "' xla-artifacts/WORKSPACE | sed 's/.*XLA_COMMIT = "\([^"]*\)".*/\1/')
           echo "Extracted XLA Commit ID: $XLA_COMMIT_ID"
           echo "xla_commit_id=$XLA_COMMIT_ID" >> "$GITHUB_OUTPUT"
-      - name: Build Library
+      - name: Build Dynamic Library
         working-directory: ./xla-artifacts
-        id: build_library
+        id: build_dynamic_library
         shell: bash
         run: |
           OUTPUT=${{ matrix.config.output }}
           bazel build ${{ matrix.config.config }} //:rift-pjrt-sys-archive
           cp bazel-bin/rift-pjrt-sys-archive.tar.gz $OUTPUT
           echo "library=$OUTPUT" >> $GITHUB_OUTPUT
-          if [[ ${{ matrix.config.device != 'rocm' }} ]]; then
-            OUTPUT_STATIC=$(echo '${{ matrix.config.output }}' | sed 's/-sys/-sys-static/')
-            bazel build ${{ matrix.config.config }} //:rift-pjrt-sys-static-archive
-            cp bazel-bin/rift-pjrt-sys-static-archive.tar.gz $OUTPUT_STATIC
-            echo "static_library=$OUTPUT_STATIC" >> $GITHUB_OUTPUT
-          fi
-      - name: Upload '${{ steps.build_library.outputs.library }}'
+      - name: Upload Dynamic Library
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.build_library.outputs.library }}
-          path: xla-artifacts/${{ steps.build_library.outputs.library }}
-      - name: Upload '${{ steps.build_library.outputs.static_library }}'
+          name: ${{ steps.build_dynamic_library.outputs.library }}
+          path: xla-artifacts/${{ steps.build_dynamic_library.outputs.library }}
+      - name: Build Static Library
+        if: ${{ matrix.config.device != 'rocm' }}
+        working-directory: ./xla-artifacts
+        id: build_static_library
+        shell: bash
+        run: |
+          OUTPUT=$(echo '${{ matrix.config.output }}' | sed 's/-sys/-sys-static/')
+          bazel build ${{ matrix.config.config }} //:rift-pjrt-sys-static-archive
+          cp bazel-bin/rift-pjrt-sys-static-archive.tar.gz $OUTPUT
+          echo "library=$OUTPUT" >> $GITHUB_OUTPUT
+      - name: Upload Static Library
         if: ${{ matrix.config.device != 'rocm' }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.build_library.outputs.static_library }}
-          path: xla-artifacts/${{ steps.build_library.outputs.static_library }}
+          name: ${{ steps.build_static_library.outputs.library }}
+          path: xla-artifacts/${{ steps.build_static_library.outputs.library }}
 
   release:
     name: Release Artifacts
