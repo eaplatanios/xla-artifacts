@@ -63,6 +63,8 @@ jobs:
       - name: Install LLVM 18 & NUMA
         if: ${{ matrix.config.os == 'linux' }}
         run: |
+          sudo apt purge llvm* clang* lld* libc++* -y
+          sudo apt autoremove -y
           wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s -- 18
           sudo apt-get install libnuma-dev -y
       - name: Install Python
