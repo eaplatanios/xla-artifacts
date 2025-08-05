@@ -115,7 +115,7 @@ build:rocm --define=tensorflow_mkldnn_contraction_kernel=0
 build:rocm --define=xnn_enable_avxvnniint8=false
 build:rocm --define=xnn_enable_avx512fp16=false
 build:rocm --repo_env TF_NEED_ROCM=1
-build:rocm --action_env=CLANG_COMPILER_PATH="/usr/lib/llvm-18/bin/clang"
+# build:rocm --action_env=CLANG_COMPILER_PATH="/usr/lib/llvm-18/bin/clang"
 build:rocm --action_env=TF_ROCM_CLANG="1"
 build:rocm --action_env=TF_HIPCC_CLANG="1"
 build:rocm --copt=-Wno-gnu-offsetof-extensions
