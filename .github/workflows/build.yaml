@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   build:
-    name: Build [${{ matrix.config.os }}-${{ matrix.config.architecture }}]
+    name: Build [${{ matrix.config.os }}-${{ matrix.config.architecture }}-${{ matrix.config.device }}]
     runs-on: ${{ matrix.config.runner }}
     strategy:
       fail-fast: false
@@ -19,18 +19,23 @@ jobs:
         config:
           - os: linux
             architecture: amd64
-            cuda: true
-            rocm: true
+            device: cpu
+            runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64/image=ubuntu22-gpu-x64/disk=large/tag=ubuntu22-cuda-x64/spot=false
+          - os: linux
+            architecture: amd64
+            device: cuda
+            runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64/image=ubuntu22-gpu-x64/disk=large/tag=ubuntu22-cuda-x64/spot=false
+          - os: linux
+            architecture: amd64
+            device: rocm
             runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64/image=ubuntu22-gpu-x64/disk=large/tag=ubuntu22-cuda-x64/spot=false
           - os: macos
             architecture: arm64
-            cuda: false
-            rocm: false
+            device: cpu
             runner: macos-15
           - os: windows
             architecture: amd64
-            cuda: false
-            rocm: false
+            device: cpu
             runner: runs-on=${{ github.run_id }}/image=windows22-base-x64/family=c7i-flex.8xlarge/disk=large/spot=false
     outputs:
       xla_commit_id: ${{ steps.extract_xla_commit_id.outputs.xla_commit_id }}
@@ -61,7 +66,7 @@ jobs:
           choco install llvm --version 18.1.8 -y
           echo "C:\Program Files\LLVM\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       - name: Install LLVM 18 & NUMA
-        if: ${{ matrix.config.os == 'linux' }}
+        if: ${{ matrix.config.os == 'linux' && matrix.config.device == 'rocm' }}
         run: |
           sudo apt purge llvm* clang* lld* libc++* -y
           sudo apt autoremove -y
@@ -86,115 +91,54 @@ jobs:
           XLA_COMMIT_ID=$(grep 'XLA_COMMIT = "' xla-artifacts/WORKSPACE | sed 's/.*XLA_COMMIT = "\([^"]*\)".*/\1/')
           echo "Extracted XLA Commit ID: $XLA_COMMIT_ID"
           echo "xla_commit_id=$XLA_COMMIT_ID" >> "$GITHUB_OUTPUT"
-      - name: Build Dynamic Library for CPU
+      - name: Build `rift-pjrt-sys` Dynamic Library
         working-directory: ./xla-artifacts
-        id: build_dynamic_library_for_cpu
+        id: build_rift_pjrt_sys_dynamic_library
         shell: bash
         run: |
-          OUTPUT=rift-pjrt-sys-${{ matrix.config.os }}-${{ matrix.config.architecture }}-cpu.tar.gz
-          bazel build --config=${{ matrix.config.os }} //:rift-pjrt-sys-archive
+          OUTPUT=rift-pjrt-sys-${{ matrix.config.os }}-${{ matrix.config.architecture }}-${{ matrix.config.device }}.tar.gz
+          bazel build --config=${{ matrix.config.os }} ${{ matrix.config.device == 'cuda' && '--config=cuda' || '' }} ${{ matrix.config.device == 'rocm' && '--config=rocm' || '' }} //:rift-pjrt-sys-archive
           cp bazel-bin/rift-pjrt-sys-archive.tar.gz $OUTPUT
           echo "library=$OUTPUT" >> $GITHUB_OUTPUT
-      - name: Build Static Library for CPU
+      - name: Build `rift-pjrt-sys` Static Library
+        if: ${{ matrix.config.device != 'rocm' }} # TODO(eaplatanios): Figure out how to build a static library for ROCm.
         working-directory: ./xla-artifacts
-        id: build_static_library_for_cpu
+        id: build_rift_pjrt_sys_static_library
         shell: bash
         run: |
-          OUTPUT=rift-pjrt-sys-static-${{ matrix.config.os }}-${{ matrix.config.architecture }}-cpu.tar.gz
-          bazel build --config=${{ matrix.config.os }} //:rift-pjrt-sys-static-archive
+          OUTPUT=rift-pjrt-sys-static-${{ matrix.config.os }}-${{ matrix.config.architecture }}-${{ matrix.config.device }}.tar.gz
+          bazel build --config=${{ matrix.config.os }} ${{ matrix.config.device == 'cuda' && '--config=cuda' || '' }} ${{ matrix.config.device == 'rocm' && '--config=rocm' || '' }} //:rift-pjrt-sys-static-archive
           cp bazel-bin/rift-pjrt-sys-static-archive.tar.gz $OUTPUT
           echo "library=$OUTPUT" >> $GITHUB_OUTPUT
-      - name: Build Dynamic Library for CUDA
-        if: ${{ matrix.config.os == 'linux' }}
+      - name: Build PJRT Plugin
+        if: ${{ matrix.config.device != 'cpu' }}
         working-directory: ./xla-artifacts
-        id: build_dynamic_library_for_cuda
+        id: build_pjrt_plugin
         shell: bash
         run: |
-          OUTPUT=rift-pjrt-sys-${{ matrix.config.os }}-${{ matrix.config.architecture }}-cuda.tar.gz
-          bazel build --config=${{ matrix.config.os }} --config=cuda //:rift-pjrt-sys-archive
-          cp bazel-bin/rift-pjrt-sys-archive.tar.gz $OUTPUT
-          echo "library=$OUTPUT" >> $GITHUB_OUTPUT
-      - name: Build Static Library for CUDA
-        if: ${{ matrix.config.os == 'linux' }}
-        working-directory: ./xla-artifacts
-        id: build_static_library_for_cuda
-        shell: bash
-        run: |
-          OUTPUT=rift-pjrt-sys-static-${{ matrix.config.os }}-${{ matrix.config.architecture }}-cuda.tar.gz
-          bazel build --config=${{ matrix.config.os }} --config=cuda //:rift-pjrt-sys-static-archive
-          cp bazel-bin/rift-pjrt-sys-static-archive.tar.gz $OUTPUT
-          echo "library=$OUTPUT" >> $GITHUB_OUTPUT
-      - name: Build PJRT CUDA Plugin
-        if: ${{ matrix.config.os == 'linux' }}
-        working-directory: ./xla-artifacts
-        id: build_pjrt_cuda_plugin
-        shell: bash
-        run: |
-          OUTPUT=libpjrt-plugin-${{ matrix.config.os }}-${{ matrix.config.architecture }}-cuda.so
-          bazel build --config=${{ matrix.config.os }} --config=cuda //:pjrt-gpu-plugin
+          LIB_PREFIX="${{ matrix.config.device != 'windows' && 'lib' || '' }}"
+          LIB_SUFFIX="${{ matrix.config.device == 'linux' && '.so' || '' }}${{ matrix.config.device == 'macos' && '.dylib' || '' }}${{ matrix.config.device == 'windows' && '.dll' || '' }}"
+          OUTPUT="${LIB_PREFIX}pjrt-plugin-${{ matrix.config.os }}-${{ matrix.config.architecture }}-${{ matrix.config.device }}${LIB_SUFFIX}"
+          bazel build --config=${{ matrix.config.os }} ${{ matrix.config.device == 'cuda' && '--config=cuda' || '' }} ${{ matrix.config.device == 'rocm' && '--config=rocm' || '' }} //:pjrt-gpu-plugin
           cp bazel-bin/libpjrt-gpu-plugin.so $OUTPUT
           echo "library=$OUTPUT" >> $GITHUB_OUTPUT
-      - name: Build Dynamic Library for ROCm
-        if: ${{ matrix.config.os == 'linux' }}
-        working-directory: ./xla-artifacts
-        id: build_dynamic_library_for_rocm
-        shell: bash
-        run: |
-          OUTPUT=rift-pjrt-sys-${{ matrix.config.os }}-${{ matrix.config.architecture }}-rocm.tar.gz
-          bazel build --config=${{ matrix.config.os }} --config=rocm //:rift-pjrt-sys-archive
-          cp bazel-bin/rift-pjrt-sys-archive.tar.gz $OUTPUT
-          echo "library=$OUTPUT" >> $GITHUB_OUTPUT
-      # TODO(eaplatanios): Figure out how to build a static library for ROCm.
-      - name: Build PJRT ROCm Plugin
-        if: ${{ matrix.config.os == 'linux' }}
-        working-directory: ./xla-artifacts
-        id: build_pjrt_rocm_plugin
-        shell: bash
-        run: |
-          OUTPUT=libpjrt-plugin-${{ matrix.config.os }}-${{ matrix.config.architecture }}-rocm.so
-          bazel build --config=${{ matrix.config.os }} --config=rocm //:pjrt-gpu-plugin
-          cp bazel-bin/libpjrt-gpu-plugin.so $OUTPUT
-          echo "library=$OUTPUT" >> $GITHUB_OUTPUT
-      - name: Upload Dynamic Library for CPU
+      - name: Upload `rift-pjrt-sys` Dynamic Library
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.build_dynamic_library_for_cpu.outputs.library }}
-          path: xla-artifacts/${{ steps.build_dynamic_library_for_cpu.outputs.library }}
-      - name: Upload Static Library for CPU
+          name: ${{ steps.build_rift_pjrt_sys_dynamic_library.outputs.library }}
+          path: xla-artifacts/${{ steps.build_rift_pjrt_sys_dynamic_library.outputs.library }}
+      - name: Upload `rift-pjrt-sys` Static Library
+        if: ${{ matrix.config.device != 'rocm' }} # TODO(eaplatanios): Figure out how to build a static library for ROCm.
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.build_static_library_for_cpu.outputs.library }}
-          path: xla-artifacts/${{ steps.build_static_library_for_cpu.outputs.library }}
-      - name: Upload Dynamic Library for CUDA
-        if: ${{ matrix.config.os == 'linux' }}
+          name: ${{ steps.build_rift_pjrt_sys_static_library.outputs.library }}
+          path: xla-artifacts/${{ steps.build_rift_pjrt_sys_static_library.outputs.library }}
+      - name: Upload PJRT Plugin
+        if: ${{ matrix.config.device != 'cpu' }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.build_dynamic_library_for_cuda.outputs.library }}
-          path: xla-artifacts/${{ steps.build_dynamic_library_for_cuda.outputs.library }}
-      - name: Upload Static Library for CUDA
-        if: ${{ matrix.config.os == 'linux' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.build_static_library_for_cuda.outputs.library }}
-          path: xla-artifacts/${{ steps.build_static_library_for_cuda.outputs.library }}
-      - name: Upload Dynamic Library for ROCm
-        if: ${{ matrix.config.os == 'linux' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.build_dynamic_library_for_rocm.outputs.library }}
-          path: xla-artifacts/${{ steps.build_dynamic_library_for_rocm.outputs.library }}
-      - name: Upload PJRT CUDA Plugin
-        if: ${{ matrix.config.os == 'linux' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.build_pjrt_cuda_plugin.outputs.library }}
-          path: xla-artifacts/${{ steps.build_pjrt_cuda_plugin.outputs.library }}
-      - name: Upload PJRT ROCm Plugin
-        if: ${{ matrix.config.os == 'linux' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.build_pjrt_rocm_plugin.outputs.library }}
-          path: xla-artifacts/${{ steps.build_pjrt_rocm_plugin.outputs.library }}
+          name: ${{ steps.build_pjrt_plugin.outputs.library }}
+          path: xla-artifacts/${{ steps.build_pjrt_plugin.outputs.library }}
 
   release:
     name: Release Artifacts
