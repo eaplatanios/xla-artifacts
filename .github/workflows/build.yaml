@@ -60,6 +60,11 @@ jobs:
           # Install LLVM 18
           choco install llvm --version 18.1.8 -y
           echo "C:\Program Files\LLVM\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Install LLVM 18
+        if: ${{ matrix.config.os == 'linux' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y llvm-18
       - name: Install Python
         uses: actions/setup-python@v5
         if: ${{ matrix.config.os == 'windows' }}
