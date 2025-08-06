@@ -1,14 +1,6 @@
 load("@com_google_protobuf//bazel/common:proto_info.bzl", "ProtoInfo")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 
-STRIP_PREFIXES = [
-    "llvm-project/llvm/include/",
-    "llvm-project/mlir/include/",
-    "shardy/",
-    "stablehlo/",
-    "xla/",
-]
-
 HEADERS = [
     "jaxlib/mosaic/gpu/integrations/c/passes.h",
     "mlir-c/IR.h",
@@ -74,154 +66,76 @@ HEADERS = [
 def _build_archive_impl(ctx):
     output = ctx.actions.declare_file(ctx.label.name + ".tar.gz")
 
-    protos = []
+    archive_files = []
+    for dep in ctx.attr.deps:
+        files = []
+        if DefaultInfo in dep:
+            files.extend(dep[DefaultInfo].files.to_list())
+        if CcInfo in dep:
+            files.extend(dep[CcInfo].compilation_context.headers.to_list())
+        if ProtoInfo in dep:
+            files.extend(dep[ProtoInfo].transitive_sources.to_list())
+            files.extend(dep[ProtoInfo].transitive_descriptor_sets.to_list())
+        for file in files:
+            path = file.short_path
 
-    # td_files = []
-    headers = []
-    libraries = []
-
-    if ProtoInfo in ctx.attr.rift_pjrt_sys_protos:
-        proto_info = ctx.attr.rift_pjrt_sys_protos[ProtoInfo]
-        transitive_proto_sources = proto_info.transitive_sources.to_list()
-        transitive_descriptors = proto_info.transitive_descriptor_sets.to_list()
-        proto_files = transitive_proto_sources + transitive_descriptors
-        for output_file in proto_files:
-            path = output_file.short_path
-            if path.startswith("../xla/"):
-                path = path[len("../xla/"):]
-                protos.append((output_file, path))
-
-    if CcInfo in ctx.attr.rift_pjrt_sys_headers:
-        cc_info = ctx.attr.rift_pjrt_sys_headers[CcInfo]
-
-        # Get headers from the compilation context.
-        for header in cc_info.compilation_context.headers.to_list():
-            path = header.path
+            # Strip Bazel path prefixes.
+            if path.startswith("../"):
+                path = path[len("../"):]
             if path.startswith("external/"):
                 path = path[len("external/"):]
-            for prefix in STRIP_PREFIXES:
+            for prefix in [
+                "llvm-project/llvm/include/",
+                "llvm-project/mlir/include/",
+                "shardy/",
+                "stablehlo/",
+                "xla/",
+            ]:
                 if path.startswith(prefix):
                     path = path[len(prefix):]
-            if path in HEADERS:
-                headers.append((header, path))
 
-    # if DefaultInfo in ctx.attr.rift_pjrt_sys_td_files:
-    #     for output_file in ctx.attr.rift_pjrt_sys_td_files[DefaultInfo].files.to_list():
-    #         path = output_file.short_path
-    #         if not path.endswith(".td"):
-    #             continue
-    #         if path.startswith("../"):
-    #             path = path[len("../"):]
-    #         if path.startswith("external/"):
-    #             path = path[len("external/"):]
-    #         for prefix in STRIP_PREFIXES:
-    #             if path.startswith(prefix):
-    #                 path = path[len(prefix):]
-    #         td_files.append((output_file, path))
+            # Filter out unnecessary header files.
+            if path.endswith(".h") and path not in HEADERS:
+                continue
 
-    # Collect output files from DefaultInfo.
-    if DefaultInfo in ctx.attr.rift_pjrt_sys_library:
-        for output_file in ctx.attr.rift_pjrt_sys_library[DefaultInfo].files.to_list():
-            libraries.append(output_file)
-    if ctx.attr.rift_pjrt_sys_windows_interface_library:
-        if DefaultInfo in ctx.attr.rift_pjrt_sys_windows_interface_library:
-            for output_file in ctx.attr.rift_pjrt_sys_windows_interface_library[DefaultInfo].files.to_list():
-                # TODO(eaplatanios): Rename `rift_pjrt_sys.if.lib` to `rift_pjrt_sys.lib`.
-                libraries.append(output_file)
+            # Add archive path prefix.
+            if path.endswith(".so") or path.endswith(".a") or path.endswith(".dylib") or path.endswith(".dll") or path.endswith(".lib"):
+                path = "lib/" + path
+            elif path.endswith(".h"):
+                path = "include/" + path
+            elif path.endswith(".proto"):
+                path = "proto/" + path
+            elif path.endswith(".td"):
+                path = "td/" + path
+
+            archive_files.append((file, path))
 
     copy_commands = []
-    for proto, path in protos:
+    for file, path in archive_files:
         copy_commands.append("""
-            path="{path}"
-            if [[ "$path" =~ bazel-out/[^/]+/bin/(.*) ]]; then
-                # For generated files, use the path after bin/
-                path="${{BASH_REMATCH[1]}}"
-            fi
-
-            target_dir="$archive_dir/protos/$(dirname "{path}")"
+            dst="{dst}"
+            target_dir="$archive_dir/$(dirname "$dst")"
             mkdir -p "$target_dir"
             chmod 755 "$target_dir"
 
-            cp "{proto}" "$archive_dir/protos/{path}"
-            chmod 644 "$archive_dir/protos/{path}"
-        """.format(
-            proto = proto.path,
-            path = path,
-        ))
+            cp "{src}" "$archive_dir/$dst"
+            chmod 644 "$archive_dir/$dst"
 
-    # for td_file, path in td_files:
-    #     copy_commands.append("""
-    #         path="{path}"
-    #         if [[ "$path" =~ bazel-out/[^/]+/bin/(.*) ]]; then
-    #             # For generated files, use the path after bin/
-    #             path="${{BASH_REMATCH[1]}}"
-    #         fi
-
-    #         target_dir="$archive_dir/td/$(dirname "$path")"
-    #         mkdir -p "$target_dir"
-    #         chmod 755 "$target_dir"
-
-    #         cp "{td_file}" "$archive_dir/td/$path"
-    #         chmod 644 "$archive_dir/td/$path"
-    #     """.format(
-    #         td_file = td_file.path,
-    #         path = path,
-    #     ))
-    for header, path in headers:
-        copy_commands.append("""
-            path="{path}"
-            if [[ "$path" =~ bazel-out/[^/]+/bin/(.*) ]]; then
-                # For generated files, use the path after bin/
-                path="${{BASH_REMATCH[1]}}"
-            fi
-
-            target_dir="$archive_dir/include/$(dirname "$path")"
-            mkdir -p "$target_dir"
-            chmod 755 "$target_dir"
-
-            cp "{header}" "$archive_dir/include/$path"
-            chmod 644 "$archive_dir/include/$path"
-        """.format(
-            header = header.path,
-            path = path,
-        ))
-
-    # # Set permissions based on file type
-    # if [[ "$filename" == *.so ]] || [[ "$filename" == *.so.* ]] || [[ "$filename" == *.dylib ]] || [[ "$filename" == *.dll ]]; then
-    #     # Shared libraries need execute permission
-    #     chmod 755 "$archive_dir/$relative_path"
-    # elif [[ "$filename" == *.a ]]; then
-    #     # Static libraries don't need execute permission
-    #     chmod 644 "$archive_dir/$relative_path"
-    # else
-    #     # Default for headers and other files
-    #     chmod 644 "$archive_dir/$relative_path"
-    # fi
-
-    for library in libraries:
-        copy_commands.append("""
-            if [[ -f "{library}" ]]; then
-                library="{library}"
-
-                if [[ "$library" =~ bazel-out/[^/]+/bin/(.*) ]]; then
-                    # For generated files, use the path after bin/
-                    library="${{BASH_REMATCH[1]}}"
-                fi
-
-                target_dir="$archive_dir/lib/$(dirname "$library")"
-                mkdir -p "$target_dir"
-                chmod 755 "$target_dir"
-
-                cp "{library}" "$archive_dir/lib/$library"
-                chmod 755 "$archive_dir/lib/$library"
+            # Set permissions based on file type
+            if [[ "$src" == *.so ]] || [[ "$src" == *.dylib ]] || [[ "$src" == *.dll ]]; then
+                # Shared libraries need execute permissions.
+                chmod 755 "$archive_dir/$dst"
+            else
+                # Other files do not.
+                chmod 644 "$archive_dir/$dst"
             fi
         """.format(
-            library = library.path,
+            src = file.path,
+            dst = path,
         ))
 
     ctx.actions.run_shell(
-        inputs = [proto[0] for proto in protos] + [header[0] for header in headers] + libraries,
-        # inputs = [proto[0] for proto in protos] + [td_file[0] for td_file in td_files] + [header[0] for header in headers] + libraries,
+        inputs = [file[0] for file in archive_files],
         outputs = [output],
         command = """
             set -e
@@ -233,7 +147,6 @@ def _build_archive_impl(ctx):
             if [[ "$OSTYPE" == "darwin"* ]]; then
                 tar -C "$archive_dir" -czf "{output}" .
             else
-                # TODO(eaplatanios): Should this use 777 instead?
                 tar -C "$archive_dir" --mode=644 -czf "{output}" .
             fi
             rm -rf "$archive_dir"
@@ -247,11 +160,5 @@ def _build_archive_impl(ctx):
 
 build_archive = rule(
     implementation = _build_archive_impl,
-    attrs = {
-        "rift_pjrt_sys_protos": attr.label(providers = [ProtoInfo]),
-        # "rift_pjrt_sys_td_files": attr.label(providers = [DefaultInfo]),
-        "rift_pjrt_sys_headers": attr.label(providers = [CcInfo]),
-        "rift_pjrt_sys_library": attr.label(providers = [DefaultInfo]),
-        "rift_pjrt_sys_windows_interface_library": attr.label(providers = [DefaultInfo]),
-    },
+    attrs = {"deps": attr.label_list(providers = [[DefaultInfo], [CcInfo], [ProtoInfo]])},
 )
