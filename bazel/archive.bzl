@@ -176,3 +176,13 @@ build_archive = rule(
     implementation = _build_archive_impl,
     attrs = {"deps": attr.label_list(providers = [[DefaultInfo], [CcInfo], [ProtoInfo]])},
 )
+
+def _extract_headers_impl(ctx):
+    cc_info = ctx.attr.cc_library[CcInfo]
+    headers = cc_info.compilation_context.headers.to_list()
+    return DefaultInfo(files = depset(headers))
+
+extract_headers = rule(
+    implementation = _extract_headers_impl,
+    attrs = {"library": attr.label(providers = [CcInfo])},
+)
