@@ -119,6 +119,8 @@ def _build_archive_impl(ctx):
                 path = "proto/" + path
             elif is_td:
                 path = "td/" + path
+            else:
+                continue
 
             archive_files.append((file, path))
 
