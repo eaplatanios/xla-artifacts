@@ -94,18 +94,26 @@ def _build_archive_impl(ctx):
                 if path.startswith(prefix):
                     path = path[len(prefix):]
 
+            is_linux_library = path.endswith(".so") or path.endswith(".a")
+            is_macos_library = path.endswith(".dylib") or path.endswith(".a")
+            is_windows_library = path.endswith(".dll") or path.endswith(".lib") or path.endswith(".def")
+            is_library = is_linux_library or is_macos_library or is_windows_library
+            is_header = path.endswith(".h") or path.endswith(".inc")
+            is_proto = path.endswith(".proto") or path.endswith(".proto.bin")
+            is_td = path.endswith(".td")
+
             # Filter out unnecessary header files.
-            if path.endswith(".h") and path not in HEADERS:
+            if is_header and path not in HEADERS:
                 continue
 
             # Add archive path prefix.
-            if path.endswith(".so") or path.endswith(".a") or path.endswith(".dylib") or path.endswith(".dll") or path.endswith(".lib"):
+            if is_library:
                 path = "lib/" + path
-            elif path.endswith(".h"):
+            elif is_header:
                 path = "include/" + path
-            elif path.endswith(".proto"):
+            elif is_proto:
                 path = "proto/" + path
-            elif path.endswith(".td"):
+            elif is_td:
                 path = "td/" + path
 
             archive_files.append((file, path))
