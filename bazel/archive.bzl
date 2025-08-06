@@ -96,14 +96,18 @@ def _build_archive_impl(ctx):
 
             is_linux_library = path.endswith(".so") or path.endswith(".a")
             is_macos_library = path.endswith(".dylib") or path.endswith(".a")
-            is_windows_library = path.endswith(".dll") or path.endswith(".lib") or path.endswith(".def")
+            is_windows_library = path.endswith(".dll") or path.endswith(".lib")
             is_library = is_linux_library or is_macos_library or is_windows_library
-            is_header = path.endswith(".h") or path.endswith(".inc")
+            is_header = path.endswith(".h") or path.endswith(".hpp") or path.endswith(".inc")
             is_proto = path.endswith(".proto") or path.endswith(".proto.bin")
             is_td = path.endswith(".td")
 
-            # Filter out unnecessary header files.
+            # Filter out unnecessary files.
             if is_header and path not in HEADERS:
+                continue
+            if "_virtual_includes" in path:
+                continue
+            if path.endswith(".def"):
                 continue
 
             # Add archive path prefix.

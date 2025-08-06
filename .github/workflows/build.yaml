@@ -116,8 +116,8 @@ jobs:
         id: build_pjrt_plugin
         shell: bash
         run: |
-          LIB_PREFIX="${{ matrix.config.device != 'windows' && 'lib' || '' }}"
-          LIB_SUFFIX="${{ matrix.config.device == 'linux' && '.so' || '' }}${{ matrix.config.device == 'macos' && '.dylib' || '' }}${{ matrix.config.device == 'windows' && '.dll' || '' }}"
+          LIB_PREFIX="${{ matrix.config.os != 'windows' && 'lib' || '' }}"
+          LIB_SUFFIX="${{ matrix.config.os == 'linux' && '.so' || '' }}${{ matrix.config.os == 'macos' && '.dylib' || '' }}${{ matrix.config.os == 'windows' && '.dll' || '' }}"
           OUTPUT="${LIB_PREFIX}pjrt-plugin-${{ matrix.config.os }}-${{ matrix.config.architecture }}-${{ matrix.config.device }}${LIB_SUFFIX}"
           bazel build --config=${{ matrix.config.os }} ${{ matrix.config.device == 'cuda' && '--config=cuda' || '' }} ${{ matrix.config.device == 'rocm' && '--config=rocm' || '' }} //:pjrt-gpu-plugin
           cp bazel-bin/libpjrt-gpu-plugin.so $OUTPUT
