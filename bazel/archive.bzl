@@ -105,7 +105,7 @@ def _build_archive_impl(ctx):
             # Filter out unnecessary files.
             if is_header and path not in HEADERS:
                 continue
-            if "_virtual_includes" in path:
+            if "_virtual_includes" in path or "_virtual_imports" in path:
                 continue
             if path.endswith(".def"):
                 continue
@@ -115,7 +115,7 @@ def _build_archive_impl(ctx):
                 path = "lib/" + path
             elif is_header:
                 path = "include/" + path
-            elif is_proto:
+            elif is_proto and path.startswith("xla"):
                 path = "proto/" + path
             elif is_td:
                 path = "td/" + path
