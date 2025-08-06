@@ -162,10 +162,9 @@ cc_binary(
     deps = [":rift-pjrt-sys-library"],
 )
 
-filegroup(
+extract_headers(
     name = "rift-pjrt-sys-headers",
-    srcs = [":rift-pjrt-sys"],
-    output_group = "headers",
+    library = ":rift-pjrt-sys",
 )
 
 filegroup(

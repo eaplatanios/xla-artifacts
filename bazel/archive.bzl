@@ -178,7 +178,7 @@ build_archive = rule(
 )
 
 def _extract_headers_impl(ctx):
-    cc_info = ctx.attr.cc_library[CcInfo]
+    cc_info = ctx.attr.library[CcInfo]
     headers = cc_info.compilation_context.headers.to_list()
     return DefaultInfo(files = depset(headers))
 
