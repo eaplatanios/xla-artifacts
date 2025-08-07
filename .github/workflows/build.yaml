@@ -122,6 +122,14 @@ jobs:
           bazel build --config=${{ matrix.config.os }} ${{ matrix.config.device == 'cuda' && '--config=cuda' || '' }} ${{ matrix.config.device == 'rocm' && '--config=rocm' || '' }} //:pjrt-gpu-plugin
           cp bazel-bin/libpjrt-gpu-plugin.so $OUTPUT
           echo "library=$OUTPUT" >> $GITHUB_OUTPUT
+      - name: Create PJRT Plugin Archive
+        if: ${{ matrix.config.device != 'cpu' }}
+        uses: a7ul/tar-action@v1.2.0
+        with:
+          command: c
+          cwd: ./
+          files: xla-artifacts/${{ steps.build_pjrt_plugin.outputs.library }}
+          outPath: pjrt-plugin-${{ matrix.config.os }}-${{ matrix.config.architecture }}-${{ matrix.config.device }}.tar.gz
       - name: Upload `rift-pjrt-sys` Dynamic Library
         uses: actions/upload-artifact@v4
         with:
@@ -137,8 +145,8 @@ jobs:
         if: ${{ matrix.config.device != 'cpu' }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.build_pjrt_plugin.outputs.library }}
-          path: xla-artifacts/${{ steps.build_pjrt_plugin.outputs.library }}
+          name: pjrt-plugin-${{ matrix.config.os }}-${{ matrix.config.architecture }}-${{ matrix.config.device }}.tar.gz
+          path: pjrt-plugin-${{ matrix.config.os }}-${{ matrix.config.architecture }}-${{ matrix.config.device }}.tar.gz
 
   release:
     name: Release Artifacts
@@ -151,4 +159,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: xla-${{ needs.build.outputs.xla_commit_id }}
-          files: "*.tar.gz/*.tar.gz"
+          files: "*.tar.gz"
