@@ -159,4 +159,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: xla-${{ needs.build.outputs.xla_commit_id }}
-          files: "*.tar.gz"
+          files: "*.tar.gz/*.tar.gz"
