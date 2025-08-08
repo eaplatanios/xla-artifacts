@@ -8,21 +8,6 @@
  )
  
  alias(
---- a/workspace0.bzl
-+++ b/workspace0.bzl
-@@ -138,10 +138,10 @@ def workspace():
-     # Details: https://github.com/google-ml-infra/rules_ml_toolchain
-     http_archive(
-         name = "rules_ml_toolchain",
--        sha256 = "7dea33262eaa546670c3b67d8b48f3a9d8a39666d66048690036b345bdd25b5d",
--        strip_prefix = "rules_ml_toolchain-9c5ca522d7be273516dc9a8eacdc63aa0d04dc7a",
-+        sha256 = "fb78d09234528aef2be856820b69b76486829f65e4eb3c7ffaa5803b667fa441",
-+        strip_prefix = "rules_ml_toolchain-f4ad89fa906be2c1374785a79335c8a7dcd49df7",
-         urls = [
--            "https://github.com/google-ml-infra/rules_ml_toolchain/archive/9c5ca522d7be273516dc9a8eacdc63aa0d04dc7a.tar.gz",
-+            "https://github.com/zml/rules_ml_toolchain/archive/f4ad89fa906be2c1374785a79335c8a7dcd49df7.tar.gz",
-         ],
-     )
  
 --- a/xla/stream_executor/cuda/BUILD
 +++ b/xla/stream_executor/cuda/BUILD
