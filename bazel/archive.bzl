@@ -115,7 +115,7 @@ def _build_archive_impl(ctx):
                 path = "lib/" + path
             elif is_header:
                 path = "include/" + path
-            elif is_proto and path.startswith("xla"):
+            elif is_proto:
                 path = "proto/" + path
             elif is_td:
                 path = "td/" + path
