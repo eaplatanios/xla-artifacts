@@ -96,13 +96,13 @@ def _build_archive_impl(ctx):
 
             is_linux_library = path.endswith(".so") or path.endswith(".a")
             is_macos_library = path.endswith(".dylib") or path.endswith(".a")
-            is_windows_library = path.endswith(".dll") or path.endswith(".lib")
+            is_windows_library = path.endswith(".dll") or path.endswith(".lib") or path.endswith(".def")
             is_library = is_linux_library or is_macos_library or is_windows_library
             is_header = path.endswith(".h") or path.endswith(".hpp") or path.endswith(".inc")
             is_proto = path.endswith(".proto") or path.endswith(".proto.bin")
             is_td = path.endswith(".td")
 
-            # Filter out unnecessary files.
+            # Filter out unnecessary header files.
             if is_header and path not in HEADERS:
                 continue
             if "_virtual_includes" in path or "_virtual_imports" in path:
@@ -120,6 +120,7 @@ def _build_archive_impl(ctx):
             elif is_td:
                 path = "td/" + path
             else:
+                # Skip any other files that may be present here.
                 continue
 
             archive_files.append((file, path))
@@ -136,7 +137,7 @@ def _build_archive_impl(ctx):
             chmod 644 "$archive_dir/$dst"
 
             # Set permissions based on file type
-            if [[ "$src" == *.so ]] || [[ "$src" == *.dylib ]] || [[ "$src" == *.dll ]]; then
+            if [[ "$src" == *.so ]] || [[ "$src" == *.a ]] || [[ "$src" == *.dylib ]] || [[ "$src" == *.dll ]] || [[ "$src" == *.lib ]]; then
                 # Shared libraries need execute permissions.
                 chmod 755 "$archive_dir/$dst"
             else
@@ -158,11 +159,7 @@ def _build_archive_impl(ctx):
 
             {copy_commands}
 
-            if [[ "$OSTYPE" == "darwin"* ]]; then
-                tar -C "$archive_dir" -czf "{output}" .
-            else
-                tar -C "$archive_dir" --mode=644 -czf "{output}" .
-            fi
+            tar -C "$archive_dir" -czf "{output}" .
             rm -rf "$archive_dir"
         """.format(
             copy_commands = "\n".join(copy_commands),
