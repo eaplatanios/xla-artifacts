@@ -3,7 +3,13 @@ load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 
 HEADERS = [
     "jaxlib/mosaic/gpu/integrations/c/passes.h",
+    "mlir/Dialect/GPU/Transforms/Passes.capi.h.inc",
+    "mlir/Dialect/Linalg/Passes.capi.h.inc",
+    "mlir/Dialect/SparseTensor/Transforms/Passes.capi.h.inc",
+    "mlir-c/AffineExpr.h",
+    "mlir-c/AffineMap.h",
     "mlir-c/IR.h",
+    "mlir-c/Pass.h",
     "mlir-c/RegisterEverything.h",
     "mlir-c/Support.h",
     "mlir-c/Dialect/AMDGPU.h",
