@@ -51,6 +51,7 @@ HEADERS = [
     "xla/mlir_hlo/bindings/c/Dialects.h",
     "xla/mlir_hlo/bindings/c/Passes.h",
     "xla/mlir_hlo/bindings/c/Types.h",
+    "xla/backends/profiler/plugin/profiler_c_api.h",
     "xla/pjrt/c/pjrt_c_api.h",
     "xla/pjrt/c/pjrt_c_api_ffi_extension.h",
     "xla/pjrt/c/pjrt_c_api_layouts_extension.h",
