@@ -14,6 +14,7 @@ HEADERS = [
     "llvm-c/Visibility.h",
     "mlir/Config/mlir-config.h",
     "mlir/Conversion/Passes.capi.h.inc",
+    "mlir/Dialect/Async/Passes.capi.h.inc",
     "mlir/Dialect/GPU/Transforms/Passes.capi.h.inc",
     "mlir/Dialect/Linalg/Passes.capi.h.inc",
     "mlir/Dialect/SparseTensor/Transforms/Passes.capi.h.inc",
