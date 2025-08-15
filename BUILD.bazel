@@ -232,7 +232,7 @@ build_archive(
         ":rift-pjrt-sys-headers",
         ":rift-pjrt-sys-protos",
         ":rift-pjrt-sys-static",
-        # ":rift-pjrt-sys-td-files",
+        ":rift-pjrt-sys-td-files",
         "@llvm-project//mlir:c_headers",
     ],
 )
@@ -243,7 +243,7 @@ build_archive(
         ":rift-pjrt-sys",
         ":rift-pjrt-sys-headers",
         ":rift-pjrt-sys-protos",
-        # ":rift-pjrt-sys-td-files",
+        ":rift-pjrt-sys-td-files",
         ":rift-pjrt-sys-windows-interface-library",
         "@llvm-project//mlir:c_headers",
     ],
