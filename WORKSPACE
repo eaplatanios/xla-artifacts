@@ -6,13 +6,13 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # XLA
 # ----------------------------------------------------
 
-XLA_COMMIT = "0fccb8a6037019b20af2e502ba4b8f5e0f98c8f6"
+XLA_COMMIT = "9813877cff4114443aaadb3754f1f77ab077283d"
 
-XLA_SHA256 = "c3695f99ff78374de464385d922e2e5a32e832b8665a2b8825b96a3df45ce0cd"
+XLA_SHA256 = "8555ee9df5e4b5133509e8c90e66cc0cbc956fbb9fd89e6b6f21c82d5637caa1"
 
-JAX_COMMIT = "b5b6e1f59ea05d92f62ab9306f4878eb1c2b97e8"
+JAX_COMMIT = "7b4aee01849918430ca1b1b57d8a8326ee0d468b"
 
-JAX_SHA256 = "a6ae736e8e13f28c538e307cd67af23a1fc37e3076e090ebf46e9d07f848e591"
+JAX_SHA256 = "713aebc70f41022f9ddac7c785f89cb239706be25adcd797b72185c666618639"
 
 http_archive(
     name = "xla",
@@ -37,6 +37,25 @@ http_archive(
         "https://storage.googleapis.com/mirror.tensorflow.org/github.com/jax-ml/jax/archive/{commit}.tar.gz".format(commit = JAX_COMMIT),
         "https://github.com/jax-ml/jax/archive/{commit}.tar.gz".format(commit = JAX_COMMIT),
     ],
+)
+
+http_archive(
+    name = "rules_ml_toolchain",
+    patch_args = [
+        "-p1",
+        "--ignore-whitespace",
+    ],
+    patches = ["//patches:rules_ml_toolchain.patch"],
+    sha256 = "d5aef14096f367bae6f2deb5946a31892b06badd660f8c30f6565a0f9a99185f",
+    strip_prefix = "rules_ml_toolchain-18ba88facf7f0d7203adbaccb982315936b1ac7a",
+    urls = [
+        "https://github.com/google-ml-infra/rules_ml_toolchain/archive/18ba88facf7f0d7203adbaccb982315936b1ac7a.tar.gz",
+    ],
+)
+
+load(
+    "@rules_ml_toolchain//cc/deps:cc_toolchain_deps.bzl",
+    "cc_toolchain_deps",
 )
 
 load("@xla//:workspace4.bzl", "xla_workspace4")
@@ -82,25 +101,6 @@ xla_workspace1()
 load("@xla//:workspace0.bzl", "xla_workspace0")
 
 xla_workspace0()
-
-http_archive(
-    name = "rules_ml_toolchain",
-    patch_args = [
-        "-p1",
-        "--ignore-whitespace",
-    ],
-    patches = ["//patches:rules_ml_toolchain.patch"],
-    sha256 = "d486aadba1b4415da16d744e4511c7a35d4d1604c61ed562d37519d5ed072a86",
-    strip_prefix = "rules_ml_toolchain-69a7b71c9424ddbcc27cb7814ecfd482510b1947",
-    urls = [
-        "https://github.com/google-ml-infra/rules_ml_toolchain/archive/69a7b71c9424ddbcc27cb7814ecfd482510b1947.tar.gz",
-    ],
-)
-
-load(
-    "@rules_ml_toolchain//cc/deps:cc_toolchain_deps.bzl",
-    "cc_toolchain_deps",
-)
 
 cc_toolchain_deps()
 
