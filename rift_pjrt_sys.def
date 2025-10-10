@@ -362,19 +362,34 @@ EXPORTS
     mlirGPUObjectAttrGetWithKernels
     mlirGPUObjectAttrHasKernels
     mlirGPUObjectAttrHasProperties
+    mlirGetDialectHandle__amdgpu__
     mlirGetDialectHandle__arith__
+    mlirGetDialectHandle__async__
     mlirGetDialectHandle__cf__
+    mlirGetDialectHandle__emitc__
     mlirGetDialectHandle__func__
     mlirGetDialectHandle__gpu__
+    mlirGetDialectHandle__index__
     mlirGetDialectHandle__interpreter__
     mlirGetDialectHandle__irdl__
+    mlirGetDialectHandle__linalg__
     mlirGetDialectHandle__llvm__
     mlirGetDialectHandle__math__
     mlirGetDialectHandle__memref__
     mlirGetDialectHandle__mhlo__
+    mlirGetDialectHandle__ml_program__
     mlirGetDialectHandle__nvgpu__
     mlirGetDialectHandle__nvvm__
+    mlirGetDialectHandle__pdl__
+    mlirGetDialectHandle__rocdl__
     mlirGetDialectHandle__scf__
+    mlirGetDialectHandle__shape__
+    mlirGetDialectHandle__smt__
+    mlirGetDialectHandle__sparse_tensor__
+    mlirGetDialectHandle__spirv__
+    mlirGetDialectHandle__tensor__
+    mlirGetDialectHandle__transform__
+    mlirGetDialectHandle__quant__
     mlirGetDialectHandle__vector__
     mlirIRRewriterCreate
     mlirIRRewriterCreateFromOp
@@ -925,6 +940,7 @@ EXPORTS
 
     ; Stable HLO / Dialects
     mlirGetDialectHandle__chlo__
+    mlirGetDialectHandle__mhlo__
     mlirGetDialectHandle__stablehlo__
     mlirGetDialectHandle__vhlo__
 
