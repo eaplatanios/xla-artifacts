@@ -91,24 +91,24 @@ jobs:
           XLA_COMMIT_ID=$(grep 'XLA_COMMIT = "' xla-artifacts/WORKSPACE | sed 's/.*XLA_COMMIT = "\([^"]*\)".*/\1/')
           echo "Extracted XLA Commit ID: $XLA_COMMIT_ID"
           echo "xla_commit_id=$XLA_COMMIT_ID" >> "$GITHUB_OUTPUT"
-      - name: Build `rift-pjrt-sys` Dynamic Library
+      - name: Build `ryft-xla-sys` Dynamic Library
         working-directory: ./xla-artifacts
-        id: build_rift_pjrt_sys_dynamic_library
+        id: build_ryft_xla_sys_dynamic_library
         shell: bash
         run: |
-          OUTPUT=rift-pjrt-sys-${{ matrix.config.os }}-${{ matrix.config.architecture }}-${{ matrix.config.device }}.tar.gz
-          bazel build --config=${{ matrix.config.os }} ${{ matrix.config.device == 'cuda' && '--config=cuda' || '' }} ${{ matrix.config.device == 'rocm' && '--config=rocm' || '' }} //:rift-pjrt-sys-archive
-          cp bazel-bin/rift-pjrt-sys-archive.tar.gz $OUTPUT
+          OUTPUT=ryft-xla-sys-${{ matrix.config.os }}-${{ matrix.config.architecture }}-${{ matrix.config.device }}.tar.gz
+          bazel build --config=${{ matrix.config.os }} ${{ matrix.config.device == 'cuda' && '--config=cuda' || '' }} ${{ matrix.config.device == 'rocm' && '--config=rocm' || '' }} //:ryft-xla-sys-archive
+          cp bazel-bin/ryft-xla-sys-archive.tar.gz $OUTPUT
           echo "library=$OUTPUT" >> $GITHUB_OUTPUT
-      - name: Build `rift-pjrt-sys` Static Library
+      - name: Build `ryft-xla-sys` Static Library
         if: ${{ matrix.config.device != 'rocm' }} # TODO(eaplatanios): Figure out how to build a static library for ROCm.
         working-directory: ./xla-artifacts
-        id: build_rift_pjrt_sys_static_library
+        id: build_ryft_xla_sys_static_library
         shell: bash
         run: |
-          OUTPUT=rift-pjrt-sys-static-${{ matrix.config.os }}-${{ matrix.config.architecture }}-${{ matrix.config.device }}.tar.gz
-          bazel build --config=${{ matrix.config.os }} ${{ matrix.config.device == 'cuda' && '--config=cuda' || '' }} ${{ matrix.config.device == 'rocm' && '--config=rocm' || '' }} //:rift-pjrt-sys-static-archive
-          cp bazel-bin/rift-pjrt-sys-static-archive.tar.gz $OUTPUT
+          OUTPUT=ryft-xla-sys-static-${{ matrix.config.os }}-${{ matrix.config.architecture }}-${{ matrix.config.device }}.tar.gz
+          bazel build --config=${{ matrix.config.os }} ${{ matrix.config.device == 'cuda' && '--config=cuda' || '' }} ${{ matrix.config.device == 'rocm' && '--config=rocm' || '' }} //:ryft-xla-sys-static-archive
+          cp bazel-bin/ryft-xla-sys-static-archive.tar.gz $OUTPUT
           echo "library=$OUTPUT" >> $GITHUB_OUTPUT
       - name: Build PJRT Plugin
         if: ${{ matrix.config.device != 'cpu' }}
@@ -130,17 +130,17 @@ jobs:
           cwd: ./
           files: xla-artifacts/${{ steps.build_pjrt_plugin.outputs.library }}
           outPath: pjrt-plugin-${{ matrix.config.os }}-${{ matrix.config.architecture }}-${{ matrix.config.device }}.tar.gz
-      - name: Upload `rift-pjrt-sys` Dynamic Library
+      - name: Upload `ryft-xla-sys` Dynamic Library
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.build_rift_pjrt_sys_dynamic_library.outputs.library }}
-          path: xla-artifacts/${{ steps.build_rift_pjrt_sys_dynamic_library.outputs.library }}
-      - name: Upload `rift-pjrt-sys` Static Library
+          name: ${{ steps.build_ryft_xla_sys_dynamic_library.outputs.library }}
+          path: xla-artifacts/${{ steps.build_ryft_xla_sys_dynamic_library.outputs.library }}
+      - name: Upload `ryft-xla-sys` Static Library
         if: ${{ matrix.config.device != 'rocm' }} # TODO(eaplatanios): Figure out how to build a static library for ROCm.
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.build_rift_pjrt_sys_static_library.outputs.library }}
-          path: xla-artifacts/${{ steps.build_rift_pjrt_sys_static_library.outputs.library }}
+          name: ${{ steps.build_ryft_xla_sys_static_library.outputs.library }}
+          path: xla-artifacts/${{ steps.build_ryft_xla_sys_static_library.outputs.library }}
       - name: Upload PJRT Plugin
         if: ${{ matrix.config.device != 'cpu' }}
         uses: actions/upload-artifact@v4

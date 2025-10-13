@@ -87,7 +87,7 @@ XLA_DEPENDENCIES = [
     "@xla//xla/service/spmd/shardy/integrations/c:xla_sdy_capi",
 ]
 
-RIFT_PJRT_SYS_DEPENDENCIES = XLA_DEPENDENCIES + select({
+RYFT_PJRT_SYS_DEPENDENCIES = XLA_DEPENDENCIES + select({
     "@local_config_cuda//:is_cuda_enabled": [
         "@xla//xla/pjrt/c:pjrt_c_api_gpu",
         "@xla//xla/service:gpu_plugin",
@@ -103,16 +103,16 @@ RIFT_PJRT_SYS_DEPENDENCIES = XLA_DEPENDENCIES + select({
     ],
 })
 
-# The main `rift-pjrt-sys` library can be built to include support for CUDA or ROCm
+# The main `ryft-xla-sys` library can be built to include support for CUDA or ROCm
 # without requiring a separate plugin. If built with CPU-only support, then the resulting
 # binaries will be smaller and will still be able to load PJRT plugins dynamically
 # (e.g., for GPU support). Building it with GPU support is convenient if you want
 # to have GPU support combined with a single statically-linked Rust binary.
 cc_library(
-    name = "rift-pjrt-sys-library",
+    name = "ryft-xla-sys-library",
     additional_linker_inputs = [
-        ":rift_pjrt_sys_exported_symbols.txt",
-        ":rift_pjrt_sys_version_script.lds",
+        ":ryft_xla_sys_exported_symbols.txt",
+        ":ryft_xla_sys_version_script.lds",
     ],
     copts = tsl_copts(),
     linkopts = select({
@@ -120,61 +120,61 @@ cc_library(
             "/FORCE:MULTIPLE",
         ],
         "@xla//xla/tsl:macos": [
-            "-Wl,-exported_symbols_list,$(location :rift_pjrt_sys_exported_symbols.txt)",
+            "-Wl,-exported_symbols_list,$(location :ryft_xla_sys_exported_symbols.txt)",
             "-Wl,-undefined,error",
         ],
         "//conditions:default": [
-            "-Wl,--version-script,$(location :rift_pjrt_sys_version_script.lds)",
+            "-Wl,--version-script,$(location :ryft_xla_sys_version_script.lds)",
             "-Wl,--no-undefined",
         ],
     }),
-    win_def_file = ":rift_pjrt_sys.def",
-    deps = RIFT_PJRT_SYS_DEPENDENCIES,
+    win_def_file = ":ryft_xla_sys.def",
+    deps = RYFT_PJRT_SYS_DEPENDENCIES,
     # linkstatic = True,
     alwayslink = True,
 )
 
 cc_static_library(
-    name = "rift-pjrt-sys-static",
-    deps = [":rift-pjrt-sys-library"],
+    name = "ryft-xla-sys-static",
+    deps = [":ryft-xla-sys-library"],
 )
 
 cc_binary(
-    name = "rift-pjrt-sys",
+    name = "ryft-xla-sys",
     linkopts = select({
         "@xla//xla/tsl:windows": [],
         "@xla//xla/tsl:macos": [
             # We set the `install_name`, such that the library is looked up in the `RPATH`
             # at runtime. Otherwise, the `install_name` would be an arbitrary path within
             # the Bazel workspace.
-            "-Wl,-install_name,@rpath/librift-pjrt-sys.dylib",
+            "-Wl,-install_name,@rpath/libryft-xla-sys.dylib",
 
-            # We set `RPATH` to the same directory as `librift-pjrt-sys.dylib`, so that loading PJRT
+            # We set `RPATH` to the same directory as `libryft-xla-sys.dylib`, so that loading PJRT
             # plugins from within the same directory works out of the box.
             "-Wl,-rpath,@loader_path/",
         ],
         "//conditions:default": [
-            "-Wl,-soname,librift-pjrt-sys.so",
+            "-Wl,-soname,libryft-xla-sys.so",
             "-Wl,-rpath='$$ORIGIN'",
         ],
     }),
     linkshared = True,
-    deps = [":rift-pjrt-sys-library"],
+    deps = [":ryft-xla-sys-library"],
 )
 
 extract_headers(
-    name = "rift-pjrt-sys-headers",
-    library = ":rift-pjrt-sys",
+    name = "ryft-xla-sys-headers",
+    library = ":ryft-xla-sys",
 )
 
 filegroup(
-    name = "rift-pjrt-sys-windows-interface-library",
-    srcs = [":rift-pjrt-sys"],
+    name = "ryft-xla-sys-windows-interface-library",
+    srcs = [":ryft-xla-sys"],
     output_group = "interface_library",
 )
 
 filegroup(
-    name = "rift-pjrt-sys-td-files",
+    name = "ryft-xla-sys-td-files",
     srcs = [
         "@llvm-project//mlir:AffineOpsTdFiles",
         "@llvm-project//mlir:ArithOpsTdFiles",
@@ -222,29 +222,29 @@ filegroup(
 )
 
 proto_library(
-    name = "rift-pjrt-sys-protos",
+    name = "ryft-xla-sys-protos",
     deps = ["@xla//xla/pjrt/proto:compile_options_proto"],
 )
 
 build_archive(
-    name = "rift-pjrt-sys-static-archive",
+    name = "ryft-xla-sys-static-archive",
     deps = [
-        ":rift-pjrt-sys-headers",
-        ":rift-pjrt-sys-protos",
-        ":rift-pjrt-sys-static",
-        ":rift-pjrt-sys-td-files",
+        ":ryft-xla-sys-headers",
+        ":ryft-xla-sys-protos",
+        ":ryft-xla-sys-static",
+        ":ryft-xla-sys-td-files",
         "@llvm-project//mlir:c_headers",
     ],
 )
 
 build_archive(
-    name = "rift-pjrt-sys-archive",
+    name = "ryft-xla-sys-archive",
     deps = [
-        ":rift-pjrt-sys",
-        ":rift-pjrt-sys-headers",
-        ":rift-pjrt-sys-protos",
-        ":rift-pjrt-sys-td-files",
-        ":rift-pjrt-sys-windows-interface-library",
+        ":ryft-xla-sys",
+        ":ryft-xla-sys-headers",
+        ":ryft-xla-sys-protos",
+        ":ryft-xla-sys-td-files",
+        ":ryft-xla-sys-windows-interface-library",
         "@llvm-project//mlir:c_headers",
     ],
 )

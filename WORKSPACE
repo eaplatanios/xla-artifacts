@@ -1,4 +1,4 @@
-workspace(name = "rift-pjrt-sys")
+workspace(name = "ryft-xla-sys")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
@@ -6,13 +6,13 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # XLA
 # ----------------------------------------------------
 
-XLA_COMMIT = "9813877cff4114443aaadb3754f1f77ab077283d"
+XLA_COMMIT = "ae296a23aae136c5f3e1c0cc110754b490747408"
 
-XLA_SHA256 = "8555ee9df5e4b5133509e8c90e66cc0cbc956fbb9fd89e6b6f21c82d5637caa1"
+XLA_SHA256 = "3bae4ab0bda19c7607d0cd1ba00c4d9bbfd86ffb888e585474fc93bfa372cc00"
 
-JAX_COMMIT = "7b4aee01849918430ca1b1b57d8a8326ee0d468b"
+JAX_COMMIT = "25da6a2134039ebe6012acb80e829bb0e7e44efd"
 
-JAX_SHA256 = "713aebc70f41022f9ddac7c785f89cb239706be25adcd797b72185c666618639"
+JAX_SHA256 = "913bda3ef4027e02a21bdd0307656e70ade1c11608c6bf8d8bae83be0f8a0df2"
 
 http_archive(
     name = "xla",
