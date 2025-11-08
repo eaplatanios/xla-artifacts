@@ -33,10 +33,10 @@ jobs:
             architecture: arm64
             device: cpu
             runner: macos-15
-          - os: windows
-            architecture: amd64
-            device: cpu
-            runner: runs-on=${{ github.run_id }}/image=windows22-base-x64/family=c7i-flex.8xlarge/disk=large/spot=false
+          # - os: windows
+          #   architecture: amd64
+          #   device: cpu
+          #   runner: runs-on=${{ github.run_id }}/image=windows22-base-x64/family=c7i-flex.8xlarge/disk=large/spot=false
     outputs:
       xla_commit_id: ${{ steps.extract_xla_commit_id.outputs.xla_commit_id }}
     steps:
