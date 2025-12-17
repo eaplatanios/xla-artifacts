@@ -6,13 +6,13 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # XLA
 # ----------------------------------------------------
 
-XLA_COMMIT = "580cb53ac968630695504611df07fbebea38cdab"
+XLA_COMMIT = "f335d3d6cfc367dc32de84a76c62f2fc9a08d22e"
 
-XLA_SHA256 = "4b16d296b186baf95e08dd38121e79cf8fd024a0ae6ec3bf60ecf7fb98b5ec59"
+XLA_SHA256 = "0950bdbcd59b10ba3f67f9d58934d993de2d6007e816103a70ec42e7e508c549"
 
-JAX_COMMIT = "4671b57105c8e3373e96227e6d2ffc17057443e1"
+JAX_COMMIT = "44085743e710edb36f39ada5de7bccd906549573"
 
-JAX_SHA256 = "bda93706b3247bd47c721937e4f05cfd22cabd024a3377e6fe56d2582417c9d4"
+JAX_SHA256 = "64f3f84e4826502ff54501dd12e8cb1b472e5088168fede6c50a7030f889d0e0"
 
 http_archive(
     name = "xla",
