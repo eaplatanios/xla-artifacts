@@ -45,8 +45,8 @@ build:linux --define=tensorflow_mkldnn_contraction_kernel=1
 # MacOS Configuration
 build:macos --config=posix
 build:macos --apple_platform_type=macos
-build:macos --macos_sdk_version=15.5
-build:macos --xcode_version=16.4
+# build:macos --macos_sdk_version=15.5
+# build:macos --xcode_version=16.4
 build:macos --apple_crosstool_top=@local_config_apple_cc//:toolchain
 build:macos --crosstool_top=@local_config_apple_cc//:toolchain
 build:macos --host_crosstool_top=@local_config_apple_cc//:toolchain

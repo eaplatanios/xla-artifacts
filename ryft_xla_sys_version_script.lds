@@ -5,6 +5,7 @@ VERS_1.0 {
   global:
     extern "C" {
       GetPjrtApi;
+      XLA_FFI_GetApi;
       mlir*;
       chlo*;
       stablehlo*;

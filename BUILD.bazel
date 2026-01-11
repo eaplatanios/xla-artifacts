@@ -85,6 +85,7 @@ XLA_DEPENDENCIES = [
     "@stablehlo//:chlo_capi",
     "@stablehlo//:stablehlo_capi",
     "@stablehlo//:vhlo_capi",
+    "@xla//xla/ffi/api:c_api",
     "@xla//xla/mlir_hlo:CAPI",
     "@xla//xla/service/spmd/shardy/integrations/c:xla_sdy_capi",
 ]

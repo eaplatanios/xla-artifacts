@@ -1,4 +1,6 @@
+# XLA
 _GetPjrtApi
+_XLA_FFI_GetApi
 
 # MLIR
 _mlirAffineAddExprGet
@@ -385,7 +387,6 @@ _mlirGetDialectHandle__scf__
 _mlirGetDialectHandle__shape__
 _mlirGetDialectHandle__smt__
 _mlirGetDialectHandle__sparse_tensor__
-_mlirGetDialectHandle__spirv__
 _mlirGetDialectHandle__tensor__
 _mlirGetDialectHandle__transform__
 _mlirGetDialectHandle__quant__
@@ -538,7 +539,6 @@ _mlirMhloAttributeIsAOutputOperandAlias
 _mlirMhloAttributeIsAPrecisionAttr
 _mlirMhloAttributeIsARngAlgorithmAttr
 _mlirMhloAttributeIsARngDistributionAttr
-_mlirMhloAttributeIsASparsityDescriptor
 _mlirMhloAttributeIsATransposeAttr
 _mlirMhloAttributeIsChannelHandle
 _mlirMhloAttributeIsTypeExtensions
@@ -591,10 +591,6 @@ _mlirMhloRngAlgorithmAttrGet
 _mlirMhloRngAlgorithmAttrGetValue
 _mlirMhloRngDistributionAttrGet
 _mlirMhloRngDistributionAttrGetValue
-_mlirMhloSparsityDescriptorGet
-_mlirMhloSparsityDescriptorGetDimension
-_mlirMhloSparsityDescriptorGetM
-_mlirMhloSparsityDescriptorGetN
 _mlirMhloTokenTypeGet
 _mlirMhloTransposeAttrGet
 _mlirMhloTransposeAttrGetValue
