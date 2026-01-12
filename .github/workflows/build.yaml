@@ -25,10 +25,10 @@ jobs:
             architecture: amd64
             device: cuda
             runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64/image=ubuntu22-gpu-x64/disk=large/tag=ubuntu22-cuda-x64/spot=false
-          # - os: linux
-          #   architecture: amd64
-          #   device: rocm
-          #   runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64/image=ubuntu22-gpu-x64/disk=large/tag=ubuntu22-cuda-x64/spot=false
+          - os: linux
+            architecture: amd64
+            device: rocm
+            runner: runs-on=${{ github.run_id }}/runner=32cpu-linux-x64/image=ubuntu22-gpu-x64/disk=large/tag=ubuntu22-cuda-x64/spot=false
           - os: macos
             architecture: arm64
             device: cpu
