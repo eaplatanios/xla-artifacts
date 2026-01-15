@@ -43,6 +43,8 @@ platform(
 # ----------------------------------------------------
 
 XLA_DEPENDENCIES = [
+    "@com_google_absl//absl/status",
+    "@com_google_absl//absl/status:statusor",
     # "@jax//jaxlib/mosaic/gpu:mlir_capi",
     "@llvm-project//llvm:Support",
     "@llvm-project//mlir:CAPIAMDGPU",
@@ -87,6 +89,7 @@ XLA_DEPENDENCIES = [
     "@stablehlo//:vhlo_capi",
     "@xla//xla/ffi/api:c_api",
     "@xla//xla/mlir_hlo:CAPI",
+    "@xla//xla/pjrt/distributed",
     "@xla//xla/service/spmd/shardy/integrations/c:xla_sdy_capi",
 ]
 
@@ -113,6 +116,13 @@ RYFT_PJRT_SYS_DEPENDENCIES = XLA_DEPENDENCIES + select({
 # to have GPU support combined with a single statically-linked Rust binary.
 cc_library(
     name = "ryft-xla-sys-library",
+    hdrs = [
+        "src/c++/common.h",
+        "src/c++/distributed.h",
+    ],
+    srcs = [
+        "src/c++/distributed.cc",
+    ],
     additional_linker_inputs = [
         ":ryft_xla_sys_exported_symbols.txt",
         ":ryft_xla_sys_version_script.lds",
