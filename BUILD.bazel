@@ -236,7 +236,15 @@ filegroup(
 
 proto_library(
     name = "ryft-xla-sys-protos",
-    deps = ["@xla//xla/pjrt/proto:compile_options_proto"],
+    deps = [
+        "@xla//xla/pjrt/proto:compile_options_proto",
+        "@xla//xla/pjrt/proto:execute_options_proto",
+        "@xla//xla/pjrt/proto:executable_metadata_proto",
+        "@xla//xla/pjrt/proto:pjrt_device_dimensions_proto",
+        "@xla//xla/pjrt/proto:pjrt_value_type_proto",
+        "@xla//xla/pjrt/proto:pjrt_partial_program_proto",
+        "@xla//xla/pjrt/proto:topology_description_proto",
+    ],
 )
 
 build_archive(
