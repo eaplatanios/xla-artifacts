@@ -127,8 +127,8 @@ jobs:
         uses: a7ul/tar-action@v1.2.0
         with:
           command: c
-          cwd: ./
-          files: xla-artifacts/${{ steps.build_pjrt_plugin.outputs.library }}
+          cwd: ./xla-artifacts/
+          files: ${{ steps.build_pjrt_plugin.outputs.library }}
           outPath: pjrt-plugin-${{ matrix.config.os }}-${{ matrix.config.architecture }}-${{ matrix.config.device }}.tar.gz
       - name: Upload `ryft-xla-sys` Dynamic Library
         uses: actions/upload-artifact@v4
