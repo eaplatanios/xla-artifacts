@@ -100,16 +100,16 @@ jobs:
           bazel build --config=${{ matrix.config.os }} ${{ matrix.config.device == 'cuda' && '--config=cuda' || '' }} ${{ matrix.config.device == 'rocm' && '--config=rocm' || '' }} //:ryft-xla-sys-archive
           cp bazel-bin/ryft-xla-sys-archive.tar.gz $OUTPUT
           echo "library=$OUTPUT" >> $GITHUB_OUTPUT
-      - name: Build `ryft-xla-sys` Static Library
-        if: ${{ matrix.config.device != 'rocm' }} # TODO(eaplatanios): Figure out how to build a static library for ROCm.
-        working-directory: ./xla-artifacts
-        id: build_ryft_xla_sys_static_library
-        shell: bash
-        run: |
-          OUTPUT=ryft-xla-sys-static-${{ matrix.config.os }}-${{ matrix.config.architecture }}-${{ matrix.config.device }}.tar.gz
-          bazel build --config=${{ matrix.config.os }} ${{ matrix.config.device == 'cuda' && '--config=cuda' || '' }} ${{ matrix.config.device == 'rocm' && '--config=rocm' || '' }} //:ryft-xla-sys-static-archive
-          cp bazel-bin/ryft-xla-sys-static-archive.tar.gz $OUTPUT
-          echo "library=$OUTPUT" >> $GITHUB_OUTPUT
+      # - name: Build `ryft-xla-sys` Static Library
+      #   if: ${{ matrix.config.device != 'rocm' }} # TODO(eaplatanios): Figure out how to build a static library for ROCm.
+      #   working-directory: ./xla-artifacts
+      #   id: build_ryft_xla_sys_static_library
+      #   shell: bash
+      #   run: |
+      #     OUTPUT=ryft-xla-sys-static-${{ matrix.config.os }}-${{ matrix.config.architecture }}-${{ matrix.config.device }}.tar.gz
+      #     bazel build --config=${{ matrix.config.os }} ${{ matrix.config.device == 'cuda' && '--config=cuda' || '' }} ${{ matrix.config.device == 'rocm' && '--config=rocm' || '' }} //:ryft-xla-sys-static-archive
+      #     cp bazel-bin/ryft-xla-sys-static-archive.tar.gz $OUTPUT
+      #     echo "library=$OUTPUT" >> $GITHUB_OUTPUT
       - name: Build PJRT Plugin
         if: ${{ matrix.config.device != 'cpu' }}
         working-directory: ./xla-artifacts
