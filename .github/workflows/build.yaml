@@ -78,7 +78,11 @@ jobs:
           sudo apt-get install libnuma-dev -y
       - name: Install CUDA 13
         if: ${{ matrix.config.device == 'cuda-13' }}
-        run: sudo apt install -y --no-install-recommends cuda-13-0 cuda-toolkit-13-0
+        run: |
+          wget "https://developer.download.nvidia.com/compute/cuda/repos/$DIST_SLUG/x86_64/cuda-keyring_1.1-1_all.deb"
+          sudo dpkg -i cuda-keyring_1.1-1_all.deb && rm cuda-keyring_1.1-1_all.deb
+          sudo apt-get update -qq
+          sudo apt install -y --no-install-recommends cuda-13-0 cuda-toolkit-13-0
       - name: Install Python
         uses: actions/setup-python@v5
         if: ${{ matrix.config.os == 'windows' }}
