@@ -124,27 +124,8 @@ cc_library(
     srcs = [
         "src/c++/distributed.cc",
     ],
-    # additional_linker_inputs = [
-    #     ":ryft_xla_sys_exported_symbols.txt",
-    #     ":ryft_xla_sys_version_script.lds",
-    # ],
     copts = tsl_copts(),
-    # linkopts = select({
-    #     "@xla//xla/tsl:windows": [
-    #         "/FORCE:MULTIPLE",
-    #     ],
-    #     "@xla//xla/tsl:macos": [
-    #         "-Wl,-exported_symbols_list,$(location :ryft_xla_sys_exported_symbols.txt)",
-    #         "-Wl,-undefined,error",
-    #     ],
-    #     "//conditions:default": [
-    #         "-Wl,--version-script,$(location :ryft_xla_sys_version_script.lds)",
-    #         "-Wl,--no-undefined",
-    #     ],
-    # }),
-    # win_def_file = ":ryft_xla_sys.def",
     deps = RYFT_PJRT_SYS_DEPENDENCIES,
-    # linkstatic = False,
     alwayslink = True,
 )
 
@@ -163,7 +144,6 @@ cc_shared_library(
     user_link_flags = select({
         "@xla//xla/tsl:windows": [
             "/FORCE:MULTIPLE",
-            # "/WHOLEARCHIVE",
         ],
         "@xla//xla/tsl:macos": [
             "-Wl,-exported_symbols_list,$(location :ryft_xla_sys_exported_symbols.txt)",
@@ -181,7 +161,7 @@ cc_shared_library(
             "-Wl,--version-script,$(location :ryft_xla_sys_version_script.lds)",
             "-Wl,--no-undefined",
             "-Wl,-soname,libryft-xla-sys.so",
-            "-Wl,-rpath='$$ORIGIN'",
+            "-Wl,-rpath=$$ORIGIN",
         ],
     }),
     win_def_file = ":ryft_xla_sys.def",
