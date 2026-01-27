@@ -86,6 +86,7 @@ XLA_DEPENDENCIES = [
     "@shardy//shardy/integrations/c:sdy_capi",
     "@stablehlo//:chlo_capi",
     "@stablehlo//:stablehlo_capi",
+    "@stablehlo//:stablehlo_dialect_capi",
     "@stablehlo//:vhlo_capi",
     "@xla//xla/ffi/api:c_api",
     "@xla//xla/mlir_hlo:CAPI",
@@ -123,27 +124,27 @@ cc_library(
     srcs = [
         "src/c++/distributed.cc",
     ],
-    additional_linker_inputs = [
-        ":ryft_xla_sys_exported_symbols.txt",
-        ":ryft_xla_sys_version_script.lds",
-    ],
+    # additional_linker_inputs = [
+    #     ":ryft_xla_sys_exported_symbols.txt",
+    #     ":ryft_xla_sys_version_script.lds",
+    # ],
     copts = tsl_copts(),
-    linkopts = select({
-        "@xla//xla/tsl:windows": [
-            "/FORCE:MULTIPLE",
-        ],
-        "@xla//xla/tsl:macos": [
-            "-Wl,-exported_symbols_list,$(location :ryft_xla_sys_exported_symbols.txt)",
-            "-Wl,-undefined,error",
-        ],
-        "//conditions:default": [
-            "-Wl,--version-script,$(location :ryft_xla_sys_version_script.lds)",
-            "-Wl,--no-undefined",
-        ],
-    }),
-    win_def_file = ":ryft_xla_sys.def",
+    # linkopts = select({
+    #     "@xla//xla/tsl:windows": [
+    #         "/FORCE:MULTIPLE",
+    #     ],
+    #     "@xla//xla/tsl:macos": [
+    #         "-Wl,-exported_symbols_list,$(location :ryft_xla_sys_exported_symbols.txt)",
+    #         "-Wl,-undefined,error",
+    #     ],
+    #     "//conditions:default": [
+    #         "-Wl,--version-script,$(location :ryft_xla_sys_version_script.lds)",
+    #         "-Wl,--no-undefined",
+    #     ],
+    # }),
+    # win_def_file = ":ryft_xla_sys.def",
     deps = RYFT_PJRT_SYS_DEPENDENCIES,
-    linkstatic = False,
+    # linkstatic = False,
     alwayslink = True,
 )
 
@@ -152,11 +153,21 @@ cc_static_library(
     deps = [":ryft-xla-sys-library"],
 )
 
-cc_binary(
+cc_shared_library(
     name = "ryft-xla-sys",
-    linkopts = select({
-        "@xla//xla/tsl:windows": [],
+    deps = [":ryft-xla-sys-library"] + RYFT_PJRT_SYS_DEPENDENCIES,
+    additional_linker_inputs = [
+        ":ryft_xla_sys_exported_symbols.txt",
+        ":ryft_xla_sys_version_script.lds",
+    ],
+    user_link_flags = select({
+        "@xla//xla/tsl:windows": [
+            "/FORCE:MULTIPLE",
+            # "/WHOLEARCHIVE",
+        ],
         "@xla//xla/tsl:macos": [
+            "-Wl,-exported_symbols_list,$(location :ryft_xla_sys_exported_symbols.txt)",
+
             # We set the `install_name`, such that the library is looked up in the `RPATH`
             # at runtime. Otherwise, the `install_name` would be an arbitrary path within
             # the Bazel workspace.
@@ -167,22 +178,23 @@ cc_binary(
             "-Wl,-rpath,@loader_path/",
         ],
         "//conditions:default": [
+            "-Wl,--version-script,$(location :ryft_xla_sys_version_script.lds)",
+            "-Wl,--no-undefined",
             "-Wl,-soname,libryft-xla-sys.so",
             "-Wl,-rpath='$$ORIGIN'",
         ],
     }),
-    linkshared = True,
-    deps = [":ryft-xla-sys-library"],
+    win_def_file = ":ryft_xla_sys.def",
 )
 
 extract_headers(
     name = "ryft-xla-sys-headers",
-    library = ":ryft-xla-sys",
+    library = ":ryft-xla-sys-library",
 )
 
 filegroup(
     name = "ryft-xla-sys-windows-interface-library",
-    srcs = [":ryft-xla-sys"],
+    srcs = [":ryft-xla-sys-library"],
     output_group = "interface_library",
 )
 

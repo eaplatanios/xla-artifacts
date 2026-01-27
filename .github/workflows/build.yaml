@@ -135,12 +135,12 @@ jobs:
         with:
           name: ${{ steps.build_ryft_xla_sys_dynamic_library.outputs.library }}
           path: xla-artifacts/${{ steps.build_ryft_xla_sys_dynamic_library.outputs.library }}
-      - name: Upload `ryft-xla-sys` Static Library
-        if: ${{ matrix.config.device != 'rocm' }} # TODO(eaplatanios): Figure out how to build a static library for ROCm.
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.build_ryft_xla_sys_static_library.outputs.library }}
-          path: xla-artifacts/${{ steps.build_ryft_xla_sys_static_library.outputs.library }}
+      # - name: Upload `ryft-xla-sys` Static Library
+      #   if: ${{ matrix.config.device != 'rocm' }} # TODO(eaplatanios): Figure out how to build a static library for ROCm.
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: ${{ steps.build_ryft_xla_sys_static_library.outputs.library }}
+      #     path: xla-artifacts/${{ steps.build_ryft_xla_sys_static_library.outputs.library }}
       - name: Upload PJRT Plugin
         if: ${{ matrix.config.device != 'cpu' }}
         uses: actions/upload-artifact@v4
